@@ -135,9 +135,9 @@ void calibrateMPU() {
     delay(5);
   }
 
-  axOffset = (xSum / numSamples) * gravity / sensitivity;
-  ayOffset = (ySum / numSamples) * gravity / sensitivity;
-  azOffset = (zSum / numSamples) * gravity / sensitivity - gravity;
+  axOffset = (xSum / numSamples) * A_GRAVITY / SENSITIIVITY;
+  ayOffset = (ySum / numSamples) * A_GRAVITY / SENSITIIVITY;
+  azOffset = (zSum / numSamples) * A_GRAVITY / SENSITIIVITY - A_GRAVITY;
 
   Serial.println("Calibration complete.");
   Serial.print("X Offset: "); Serial.println(axOffset);
@@ -148,6 +148,7 @@ void calibrateMPU() {
 void accelerometer() {
   float ax, ay, az;
   float axFiltered = 0.0, ayFiltered = 0.0, azFiltered = 0.0;
+  int x, y, z;
   
   // Read accelerometer data
   mpu.getAcceleration(&x, &y, &z);
