@@ -40,7 +40,7 @@ void loop() {
   ultrasonic_sensor();
 
   Serial.println("Running force sensitive resistor function....");
-  // force_sensitive_resistor();
+  force_sensitive_resistor();
 
   Serial.println("Running the accelerometer function....");
   accelerometer();
