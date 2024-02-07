@@ -40,7 +40,7 @@ void loop() {
   ultrasonic_sensor();
 
   Serial.println("Running force sensitive resistor function....");
-  force_sensitive_resistor();
+  // force_sensitive_resistor();
 
   Serial.println("Running the accelerometer function....");
   accelerometer();
@@ -87,35 +87,29 @@ void ultrasonic_sensor() {
 }
 
 void force_sensitive_resistor() {
-  int fsrValue = 0;
-
-  fsrValue = analogRead(FORCE_SENSOR_PIN);
-
+  int fsrValue = analogRead(FORCE_SENSOR_PIN);
   Serial.print("Force sensor reading = ");
-  Serial.println(fsrValue);
+  Serial.print(fsrValue);
   
   if (filteredValue == 0) {
     filteredValue = fsrValue;
   }
   
   filteredValue = WEIGHT_A * fsrValue + (1 - WEIGHT_A) * filteredValue;
-  
-  // Print the filtered value
-  Serial.print(", Filtered Value = ");
-  Serial.println(filteredValue);
-
-  if (filteredValue < 10)
-    Serial.println(" -> No Pressure Applied");
-  else if (filteredValue < 200)
-    Serial.println(" -> Light Pressure Applied");
-  else if (filteredValue < 500)
-    Serial.println(" -> Light Squeeze Applied");
-  else if (filteredValue < 800)
-    Serial.println(" -> Medium Squeeze Applied");
-  else
-    Serial.println(" -> Large Pressure Applied...seeks help");
+  float force_converted = map_to_force(filteredValue);
+  Serial.print(", Force = ");
+  Serial.print(force_converted);
+  Serial.println(" Newtons");
 
   delay(1000);
+}
+
+float map_to_force(int analogReading){
+  const int minValue = 10;
+  const int maxValue = 1023;
+
+  float force = map(analogReading, minValue, maxValue, 0.1,100);
+  return force;
 }
 
 void calibrateMPU() {
@@ -163,9 +157,9 @@ void accelerometer() {
 
   // Print the values
   Serial.print("Accelerometer Readings: ");
-  Serial.print("X = "); Serial.print(ax);
-  Serial.print(" | Y = "); Serial.print(ay);
-  Serial.print(" | Z = "); Serial.println(az);
+  Serial.print("X = "); Serial.print(ax); Serial.print("g");
+  Serial.print(" | Y = "); Serial.print(ay); Serial.print("g");
+  Serial.print(" | Z = "); Serial.print(az); Serial.println("g");
 
   delay(500);
 }
