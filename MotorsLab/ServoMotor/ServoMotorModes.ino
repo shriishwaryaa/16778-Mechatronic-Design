@@ -2,9 +2,18 @@
 
 #define SERVO_PIN 9
 #define MODE_SWITCH 12
-#define SERVO_CONTROL_SWITCH 3
+#define SERVO_CONTROL_SWITCH 8
 #define LED 7
 #define DEBOUNCE_DELAY 50
+
+#define ANGLE_0 0
+#define ANGLE_45 45
+#define ANGLE_180 180
+
+enum ServoDirection {
+  CLOCKWISE = 0,
+  COUNTER_CLOCKWISE = 1
+} ;
 
 Servo Servo1;
 
@@ -16,6 +25,12 @@ enum OperatingMode {
 int ModeButtonState;            // the current reading from the input pin
 int PrevModeButtonState = HIGH;  // the previous reading from the input pin
 int CurrentOperatingMode = SERVO_PUSH_BUTTON;
+int CurrentServoPosition;
+int CurrentServoDirection;
+
+int ServoChangeModeButtonState;
+int PrevServoChangeModeButtonState = HIGH;
+unsigned long LastPosDebounceTime = 0;
 
 unsigned long LastDebounceTime = 0;  // the last time the output pin was toggled
 bool ServoStepControlMode = false;
@@ -27,23 +42,19 @@ void setup() {
 
   Servo1.attach(SERVO_PIN);
   pinMode(MODE_SWITCH, INPUT);
+  pinMode(SERVO_CONTROL_SWITCH, INPUT);
+
   pinMode(LED, OUTPUT);
 
   digitalWrite(LED, LOW);
+  CurrentServoPosition = 0;
+  Servo1.write(CurrentServoPosition);
+
+  CurrentServoDirection = CLOCKWISE;
 }
 
-void Actuate_Servo () {
-  Servo1.write(0);
-  delay(1000);
-  Servo1.write(90);
-  delay(500);
-  Servo1.write(135);
-  delay(500);
-  Servo1.write(180);
-  delay(1500);
-}
 
-void CheckMode() {
+int CheckMode() {
   volatile int ModeButtonReading = digitalRead(MODE_SWITCH);
   if (ModeButtonReading != PrevModeButtonState) {
     LastDebounceTime = millis();
@@ -64,6 +75,7 @@ void CheckMode() {
             break;
           default:
             Serial.println("Something went wrong :(");
+            break;
         }
         LedState = !LedState;
         digitalWrite(LED, LedState);
@@ -72,8 +84,79 @@ void CheckMode() {
   }
   PrevModeButtonState = ModeButtonReading;
 }
+
+void RunAccelerometer() {
+
+}
+
+bool ChangePosition () {
+  bool res = false;
+  volatile int PositionButtonReading = digitalRead(SERVO_CONTROL_SWITCH);
+  if (PositionButtonReading != PrevServoChangeModeButtonState) {
+    LastPosDebounceTime = millis();
+  }
+
+  if ((millis() - LastPosDebounceTime) > DEBOUNCE_DELAY) {
+    if (PositionButtonReading != ServoChangeModeButtonState) {
+      ServoChangeModeButtonState = PositionButtonReading;
+      if (ServoChangeModeButtonState == LOW) {
+        res = true;
+      }
+    }
+  }
+  PrevServoChangeModeButtonState = PositionButtonReading;
+  return res;
+}
+
+void RunServoPushButton() {
+  if (CurrentOperatingMode != SERVO_PUSH_BUTTON) {
+    return;
+  }
+  
+  int Pressed = ChangePosition();
+  if (!Pressed) {
+    return;
+  } 
+
+  if (CurrentServoDirection == CLOCKWISE) {
+    if (CurrentServoPosition == ANGLE_180) {
+      CurrentServoDirection = COUNTER_CLOCKWISE;
+      CurrentServoPosition -= ANGLE_45;
+      Servo1.write(CurrentServoPosition);
+      return;
+    } else {
+      CurrentServoPosition += ANGLE_45;
+      Servo1.write(CurrentServoPosition);
+      return;
+    }
+  } else {
+    if (CurrentServoPosition == ANGLE_0) {
+      CurrentServoDirection = CLOCKWISE;
+      CurrentServoPosition += ANGLE_45;
+      Servo1.write(CurrentServoPosition);
+      return;
+    } else {
+      CurrentServoPosition -= ANGLE_45;
+      Servo1.write(CurrentServoPosition);
+      return;
+    }
+  }
+}
+
 void loop() {
-  CheckMode();
+  int mode = CheckMode();
+
+  switch (mode) {
+    case SERVO_ACCELEROMETER:
+      RunAccelerometer();
+      break;
+    case SERVO_PUSH_BUTTON:
+      RunServoPushButton();
+      break;
+    default:
+      Serial.println("Something went wrong :(");
+      break;
+  }
 }
 
 
