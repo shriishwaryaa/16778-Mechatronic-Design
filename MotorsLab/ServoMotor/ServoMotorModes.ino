@@ -8,8 +8,14 @@
 
 Servo Servo1;
 
+enum OperatingMode {
+  SERVO_PUSH_BUTTON = 0,
+  SERVO_ACCELEROMETER = 1
+} ;
+
 int ModeButtonState;            // the current reading from the input pin
 int PrevModeButtonState = HIGH;  // the previous reading from the input pin
+int CurrentOperatingMode = SERVO_PUSH_BUTTON;
 
 unsigned long LastDebounceTime = 0;  // the last time the output pin was toggled
 bool ServoStepControlMode = false;
@@ -37,7 +43,7 @@ void Actuate_Servo () {
   delay(1500);
 }
 
-void loop() {
+void CheckMode() {
   volatile int ModeButtonReading = digitalRead(MODE_SWITCH);
   if (ModeButtonReading != PrevModeButtonState) {
     LastDebounceTime = millis();
@@ -47,7 +53,18 @@ void loop() {
     if (ModeButtonReading != ModeButtonState) {
       ModeButtonState = ModeButtonReading;
       if (ModeButtonState == LOW) {
-        Serial.println("Changing Mode!");
+        switch (CurrentOperatingMode) {
+          case SERVO_PUSH_BUTTON:
+            Serial.println("Switching to Accelerometer Mode!");
+            CurrentOperatingMode = SERVO_ACCELEROMETER;
+            break;
+          case SERVO_ACCELEROMETER:
+            Serial.println("Switching to Push Button Mode!");
+            CurrentOperatingMode = SERVO_PUSH_BUTTON;
+            break;
+          default:
+            Serial.println("Something went wrong :(");
+        }
         LedState = !LedState;
         digitalWrite(LED, LedState);
       }
@@ -55,6 +72,10 @@ void loop() {
   }
   PrevModeButtonState = ModeButtonReading;
 }
+void loop() {
+  CheckMode();
+}
+
 
 /*
   created 21 Nov 2006
