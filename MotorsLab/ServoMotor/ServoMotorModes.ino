@@ -1,6 +1,11 @@
+/*
+MPU9255 Library - https://github.com/Bill2462/MPU9255-Arduino-Library
+Debounce Login - https://www.arduino.cc/en/Tutorial/BuiltInExamples/Debounce
+*/
+
 #include <Servo.h>
 #include <Wire.h>
-#include <MPU6050.h>
+#include <MPU9255.h>
 
 #define SERVO_PIN 9
 #define MODE_SWITCH 12
@@ -13,6 +18,7 @@
 #define GYRO_FACTOR 131.0
 #define ALPHA 0.1
 #define A_GRAVITY 9.81
+#define MAGNETOMETER_CAL 0.06
 
 #define ANGLE_0 0
 #define ANGLE_45 45
@@ -24,13 +30,7 @@ enum ServoDirection {
 } ;
 
 Servo Servo1;
-MPU6050 mpu;
-
-long accelX, accelY, accelZ;
-float gForceX, gForceY, gForceZ;
-
-long gyroX, gyroY, gyroZ;
-float rotX, rotY, rotZ;
+MPU9255 mpu;
 
 enum OperatingMode {
   SERVO_PUSH_BUTTON = 0,
@@ -50,8 +50,6 @@ unsigned long LastPosDebounceTime = 0;
 unsigned long LastDebounceTime = 0;  // the last time the output pin was toggled
 bool ServoStepControlMode = false;
 
-float axOffset = 0, ayOffset = 0, azOffset = 0;
-
 int LedState = LOW;
 
 void setup() {
@@ -70,10 +68,8 @@ void setup() {
   CurrentServoDirection = CLOCKWISE;
 
   Wire.begin();
-  mpu.initialize();
-
+  mpu.init();
 }
-
 
 int CheckMode() {
   volatile int ModeButtonReading = digitalRead(MODE_SWITCH);
@@ -104,10 +100,170 @@ int CheckMode() {
     }
   }
   PrevModeButtonState = ModeButtonReading;
+  return CurrentOperatingMode;
+}
+
+double process_acceleration(int input, scales sensor_scale )
+{
+  /*
+  To get acceleration in 'g', each reading has to be divided by :
+   -> 16384 for +- 2g scale (default scale)
+   -> 8192  for +- 4g scale
+   -> 4096  for +- 8g scale
+   -> 2048  for +- 16g scale
+  */
+  double output = 1;
+
+  //for +- 2g
+
+  if(sensor_scale == scale_2g)
+  {
+    output = input;
+    output = output/16384;
+    output = output*A_GRAVITY;
+  }
+
+  //for +- 4g
+  if(sensor_scale == scale_4g)
+  {
+    output = input;
+    output = output/8192;
+    output = output*A_GRAVITY;
+  }
+
+  //for +- 8g
+  if(sensor_scale == scale_8g)
+  {
+    output = input;
+    output = output/4096;
+    output = output*A_GRAVITY;
+  }
+
+  //for +-16g
+  if(sensor_scale == scale_16g)
+  {
+    output = input;
+    output = output/2048;
+    output = output*A_GRAVITY;
+  }
+
+  return output;
+}
+
+//process raw gyroscope data
+//input = raw reading from the sensor, sensor_scale = selected sensor scale
+//returns : angular velocity in degrees per second
+double process_angular_velocity(int16_t input, scales sensor_scale )
+{
+  /*
+  To get rotation velocity in dps (degrees per second), each reading has to be divided by :
+   -> 131   for +- 250  dps scale (default value)
+   -> 65.5  for +- 500  dps scale
+   -> 32.8  for +- 1000 dps scale
+   -> 16.4  for +- 2000 dps scale
+  */
+
+  //for +- 250 dps
+  if(sensor_scale == scale_250dps)
+  {
+    return input/131;
+  }
+
+  //for +- 500 dps
+  if(sensor_scale == scale_500dps)
+  {
+    return input/65.5;
+  }
+
+  //for +- 1000 dps
+  if(sensor_scale == scale_1000dps)
+  {
+    return input/32.8;
+  }
+
+  //for +- 2000 dps
+  if(sensor_scale == scale_2000dps)
+  {
+    return input/16.4;
+  }
+
+  return 0;
+}
+
+//process raw magnetometer data
+//input = raw reading from the sensor, sensitivity =
+//returns : magnetic flux density in μT (in micro Teslas)
+double process_magnetic_flux(int16_t input, double sensitivity)
+{
+  /*
+  To get magnetic flux density in μT, each reading has to be multiplied by sensitivity
+  (Constant value different for each axis, stored in ROM), then multiplied by some number (calibration)
+  and then divided by 0.6 .
+  (Faced North each axis should output around 31 µT without any metal / walls around
+  Note : This manetometer has really low initial calibration tolerance : +- 500 LSB !
+  Scale of the magnetometer is fixed -> +- 4800 μT.
+  */
+  return (input*MAGNETOMETER_CAL*sensitivity)/0.6;
 }
 
 void RunAccelerometer() {
+  if (CurrentOperatingMode != SERVO_ACCELEROMETER) {
+    return;
+  }
 
+  mpu.read_acc();//get data from the accelerometer
+  mpu.read_gyro();//get data from the gyroscope
+  mpu.read_mag();//get data from the magnetometer
+
+  double az_servo = 0.0;
+
+  ////process and print acceleration data////
+  //X axis
+  Serial.print("AX: ");
+  Serial.print(process_acceleration(mpu.ax,scale_2g));
+
+  //Y axis
+  Serial.print("  AY: ");
+  Serial.print(process_acceleration(mpu.ay,scale_2g));
+
+  //Z axis
+  Serial.print("  AZ: ");
+  az_servo = process_acceleration(mpu.az,scale_2g);
+
+  ////process and print gyroscope data////
+  //X axis
+  Serial.print("      GX: ");
+  Serial.print(process_angular_velocity(mpu.gx,scale_250dps));
+
+  //Y axis
+  Serial.print("  GY: ");
+  Serial.print(process_angular_velocity(mpu.gy,scale_250dps));
+
+  //Z axis
+  Serial.print("  GZ: ");
+  Serial.print(process_angular_velocity(mpu.gz,scale_250dps));
+
+
+  ////process and print magnetometer data////
+  //X axis
+  Serial.print("      MX: ");
+  Serial.print(process_magnetic_flux(mpu.mx,mpu.mx_sensitivity));
+
+  //Y axis
+  Serial.print("  MY: ");
+  Serial.print(process_magnetic_flux(mpu.my,mpu.my_sensitivity));
+
+  //Z axis
+  Serial.print("  MZ: ");
+  Serial.println(process_magnetic_flux(mpu.mz,mpu.mz_sensitivity));
+
+  double servo_map_angle = map (az_servo, -9.85, 9.85, 0, 180) ;
+  Serial.print("Writing ");
+  Serial.print(servo_map_angle);
+  Serial.println(" to servo");
+  Servo1.write(servo_map_angle);
+
+  delay(500);
 }
 
 bool ChangePosition () {
@@ -164,99 +320,6 @@ void RunServoPushButton() {
   }
 }
 
-void CalibrateMPU() {
-  Serial.println("Calibrating MPU6050. Please keep the sensor stationary.");
-  int tx, ty, tz;
-  long xSum = 0, ySum = 0, zSum = 0;
-
-  for (int i = 0; i < NUM_SAMPLES; i++) {
-    mpu.getAcceleration(&tx, &ty, &tz);
-
-    xSum += tx;
-    ySum += ty;
-    zSum += tz;
-
-    delay(5);
-  }
-
-  axOffset = (xSum / NUM_SAMPLES) * A_GRAVITY / ACCELEROMETER_FACTOR;
-  ayOffset = (ySum / NUM_SAMPLES) * A_GRAVITY / ACCELEROMETER_FACTOR;
-  azOffset = (zSum / NUM_SAMPLES) * A_GRAVITY / ACCELEROMETER_FACTOR - A_GRAVITY;
-
-  Serial.println("Calibration complete.");
-  Serial.print("X Offset: "); Serial.println(axOffset);
-  Serial.print("Y Offset: "); Serial.println(ayOffset);
-  Serial.print("Z Offset: "); Serial.println(azOffset);
-}
-
-void setupMPU(){
-  Wire.beginTransmission(0b1101000); //This is the I2C address of the MPU (b1101000/b1101001 for AC0 low/high datasheet sec. 9.2)
-  Wire.write(0x6B); //Accessing the register 6B - Power Management (Sec. 4.28)
-  Wire.write(0b00000000); //Setting SLEEP register to 0. (Required; see Note on p. 9)
-  Wire.endTransmission();  
-  Wire.beginTransmission(0b1101000); //I2C address of the MPU
-  Wire.write(0x1B); //Accessing the register 1B - Gyroscope Configuration (Sec. 4.4) 
-  Wire.write(0x00000000); //Setting the gyro to full scale +/- 250deg./s 
-  Wire.endTransmission(); 
-  Wire.beginTransmission(0b1101000); //I2C address of the MPU
-  Wire.write(0x1C); //Accessing the register 1C - Acccelerometer Configuration (Sec. 4.5) 
-  Wire.write(0b00000000); //Setting the accel to +/- 2g
-  Wire.endTransmission(); 
-}
-
-void ProcessAccelData(){
-  gForceX = accelX / ACCELEROMETER_FACTOR;
-  gForceY = accelY / ACCELEROMETER_FACTOR; 
-  gForceZ = accelZ / ACCELEROMETER_FACTOR;
-}
-
-void recordAccelRegisters() {
-  Wire.beginTransmission(0b1101000); //I2C address of the MPU
-  Wire.write(0x3B); //Starting register for Accel Readings
-  Wire.endTransmission();
-  Wire.requestFrom(0b1101000,6); //Request Accel Registers (3B - 40)
-  while(Wire.available() < 6);
-  accelX = Wire.read()<<8|Wire.read(); //Store first two bytes into accelX
-  accelY = Wire.read()<<8|Wire.read(); //Store middle two bytes into accelY
-  accelZ = Wire.read()<<8|Wire.read(); //Store last two bytes into accelZ
-  ProcessAccelData();
-}
-
-void RecordGyroRegisters() {
-  Wire.beginTransmission(0b1101000); //I2C address of the MPU
-  Wire.write(0x43); //Starting register for Gyro Readings
-  Wire.endTransmission();
-  Wire.requestFrom(0b1101000,6); //Request Gyro Registers (43 - 48)
-  while(Wire.available() < 6);
-  gyroX = Wire.read()<<8|Wire.read(); //Store first two bytes into accelX
-  gyroY = Wire.read()<<8|Wire.read(); //Store middle two bytes into accelY
-  gyroZ = Wire.read()<<8|Wire.read(); //Store last two bytes into accelZ
-  ProcessGyroData();
-}
-
-void ProcessGyroData() {
-  rotX = gyroX / GYRO_FACTOR;
-  rotY = gyroY / GYRO_FACTOR; 
-  rotZ = gyroZ / GYRO_FACTOR;
-}
-
-void PrintAccelerometerData() {
-  Serial.print("Gyro (deg)");
-  Serial.print(" X=");
-  Serial.print(rotX);
-  Serial.print(" Y=");
-  Serial.print(rotY);
-  Serial.print(" Z=");
-  Serial.print(rotZ);
-  Serial.print(" Accel (g)");
-  Serial.print(" X=");
-  Serial.print(gForceX);
-  Serial.print(" Y=");
-  Serial.print(gForceY);
-  Serial.print(" Z=");
-  Serial.println(gForceZ);
-}
-
 void loop() {
   int mode = CheckMode();
 
@@ -272,21 +335,5 @@ void loop() {
       break;
   }
 }
-
-
-/*
-  created 21 Nov 2006
-  by David A. Mellis
-  modified 30 Aug 2011
-  by Limor Fried
-  modified 28 Dec 2012
-  by Mike Walters
-  modified 30 Aug 2016
-  by Arturo Guadalupi
-
-  This example code is in the public domain.
-
-  https://www.arduino.cc/en/Tutorial/BuiltInExamples/Debounce
-*/
 
 
