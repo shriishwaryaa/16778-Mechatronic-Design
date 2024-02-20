@@ -58,13 +58,16 @@ void loop() {
   long currT = micros();
   float deltaT = ((float)(currT-prevT))/1.0e6;
   float velocity1 = (pos-posPrev)/deltaT;
+  // float velocity1 = fabs((pos - posPrev) * 60 / (43.8 * deltaT));
+
   
   float velocity3 = (pos-posPrev)*60/(98*deltaT); //This one is most accurate
   posPrev = pos;
   prevT = currT;
   
   //Convert to RPM
-  float v1 = (velocity1/(16*43.8))*60.0; //108
+  // float v1 = (velocity1/(108))*60.0; //108
+  float v1 = (velocity1/(16*43.8))*60.0;
   // float v2 = (velocity2/600)*60.0;
   float v3 = (velocity3/(16*43.8))*60.0;
 
@@ -74,8 +77,8 @@ void loop() {
   // v2Filt = 0.854*v2Filt+0.0728*v2+0.0728*v2Prev;
   // v2Prev = v2;
 
-  Serial.print("v1Filt: ");
-  Serial.println(v1Filt);
+  // Serial.print("v1Filt: ");
+  // Serial.println(v1Filt);
 
   v3Filt = 0.854*v3Filt+0.0728*v3+0.0728*v3Prev; //This is the filter velocity
   v3Prev = v3;
@@ -99,7 +102,7 @@ void loop() {
 
   float dedt = (e-eprev)/(deltaT);
   float u = kp*e+kd*dedt+ki*eintegral;
-  Serial.print(u);
+  // Serial.print(u);
   int dir = -1;
   if (u<0){
     dir = 1;
@@ -124,18 +127,20 @@ void loop() {
 
 void setMotorSpeed(int dir, int pwmVal, int pwm, int in1, int in2){
   analogWrite(pwm, pwmVal);
-  if (dir == 1){
-    digitalWrite(in1,HIGH);
-    digitalWrite(in2,LOW);
-  }
-  else if (dir == -1){
-    digitalWrite(in1,LOW);
-    digitalWrite(in2,HIGH);
-  }
-  else{
-      digitalWrite(in1,LOW);
-      digitalWrite(in2,LOW);
-  }
+  digitalWrite(in1,LOW);
+  digitalWrite(in2,HIGH);
+  // if (dir == 1){
+  //   digitalWrite(in1,HIGH);
+  //   digitalWrite(in2,LOW);
+  // }
+  // else if (dir == -1){
+  //   digitalWrite(in1,LOW);
+  //   digitalWrite(in2,HIGH);
+  // }
+  // else{
+  //     digitalWrite(in1,LOW);
+  //     digitalWrite(in2,LOW);
+  // }
 }
 
 void readEncoder(){
