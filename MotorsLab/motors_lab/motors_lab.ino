@@ -83,6 +83,8 @@ volatile int32_t motor_posn = 0;
 
 int motor_speed, mapped_speed;
 float target = 0;
+int target_position = 0;
+int target_speed = 0;
 
 long prevT = 0;
 float eprev = 0;
@@ -382,7 +384,7 @@ void RunAccelerometer() {
   Servo1.write(ServoMapAngle);
   gui_servo_pos = ServoMapAngle;
 
-  delay(500);
+  delay(15);
 }
 
 /*
@@ -531,9 +533,10 @@ void setMotorSpeed(int dir, int pwmVal, int pwm, int in1, int in2){
 }
 
 void dcPositionControl(){
-  target = analogRead(potPin);
-  gui_pot1 = target;
-  target = map(target, 0, 1023, 0, 360);
+  // target = analogRead(potPin);
+  // target = map(target, 0, 1023, 0, 360);
+
+  gui_pot1 = target_position;
   // Tunable gains
   float kp = 1.1;
   float kd = 0.01;
@@ -596,9 +599,10 @@ void dcPositionControl(){
 }
 
 void dcVelocityControl(){
-  float target_speed = analogRead(potPin);
-  gui_pot1 = target;
-  target_speed = map(target_speed,0,1023,0,255);
+  // float target_speed = analogRead(potPin);
+  // target_speed = map(target_speed,0,1023,0,255);
+
+  gui_pot1 = target_speed;
   // Serial.println(target_speed);
 
   int pos = 0;
@@ -805,6 +809,9 @@ void loop() {
       }
     }
     system_state = strs[0].toInt();
+    CurrentServoPosition = strs[1].toInt();
+    target_position = strs[2].toInt();
+    target_speed = strs[3].toInt();
   }
   
   // Run servo motor
