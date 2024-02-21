@@ -22,7 +22,7 @@
 // Servo pins
 #define J1Pin 9
 #define J2Pin 10
-#define J3Pin 4
+#define J3Pin 11
 
 // Servos
 Servo Joint1;
