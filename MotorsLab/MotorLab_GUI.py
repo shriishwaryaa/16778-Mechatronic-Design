@@ -4,6 +4,7 @@ import math
 import random
 import time
 import serial
+import serial.tools.list_ports as ports
 
 # Define the global variables
 dc_speed_label = None
@@ -119,14 +120,14 @@ def update_stepper_posmeter(count_value):
 
 def update_values(root):
     global dc_motor_speed, servo_motor_pos
-    dc_motor_speed, dc_motor_pos, servo_motor_pos, stepper_motor_count, ultrasonic_reading, temperature_reading, pot1_reading = read_from_arduino()
+    dc_motor_speed, dc_motor_pos, servo_motor_pos, stepper_motor_count, ultrasonic_reading, pot1_reading = read_from_arduino()
 
     update_dc_pos(dc_motor_pos)
     update_servo_pos(servo_motor_pos)
     update_stepper_pos(stepper_motor_count)
     update_dc_speed(dc_motor_speed)
     update_ultrasonic(ultrasonic_reading)
-    update_temp(temperature_reading)
+    # update_temp(temperature_reading)
     update_pot(pot1_reading)
 
     desired_code_state = (desired_state_entry.get())
@@ -140,12 +141,22 @@ def update_values(root):
     root.after(delay_time, update_values, root)  # Schedule next update after 3 seconds
 
 def write_to_arduino(code_state, servo_pos, motor_pos, motor_vel, stepper_turn):
-    str = (code_state, servo_pos, motor_pos, motor_vel, stepper_turn) 
-    print(str)
-    arduino.write(str)
+    # TODO: discuss if this is okay!
+    text = code_state + " " + servo_pos + " " + motor_pos + " " + motor_vel + " " + stepper_turn + "\n"
+    # print(text)
+    arduino.write(text.encode())
 
 def read_from_arduino():
-    data = arduino.readLine()
+    data = arduino.readline().decode().split()
+    data = list(map(int, data))
+
+    start_time = time.time()
+    while(len(data) < 6 and time.time() - start_time < 1):
+        data = arduino.readline().decode().split()
+        data = list(map(int, data))
+
+    data = [0, 0, 0, 0, 0, 0] if len(data) < 6 else data
+    print(data)
     return data
 
 def main():
@@ -337,5 +348,9 @@ def get_resistance():
     return r
 
 if __name__ == "__main__":
-    arduino = serial.Serial(port='COM4', baudrate=115200, timeout=.1) 
+    com_ports = list(ports.comports())
+    for i in com_ports:
+        print(i.device) 
+
+    arduino = serial.Serial(port='/dev/ttyACM0', baudrate=9600, timeout=.1) 
     main()
