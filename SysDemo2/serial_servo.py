@@ -15,7 +15,7 @@ def main():
         	for command in commands:
             		print("Sending command to Arduino:", command)
             		arduino.write(command.encode())
-            		time.sleep(5)  # Wait for 2 seconds between commands
+            		time.sleep(8)  # Wait for 8 seconds between commands
 
 if __name__ == '__main__':
 	 main()

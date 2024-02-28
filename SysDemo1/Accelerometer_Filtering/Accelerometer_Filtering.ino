@@ -46,6 +46,7 @@ void setup() {
   Servo1.attach(SERVO_PIN);
   Wire.begin();
   setupMPU();
+  Serial.println("OK");
 }
 
 
@@ -92,9 +93,9 @@ void processAccelData(){
   gForceY = accelY / 16384.0; 
   gForceZ = accelZ / 16384.0;
 
-  Serial.println(gForceX);
-  Serial.println(gForceY);
-  Serial.println(gForceZ);
+  // Serial.println(gForceX);
+  // Serial.println(gForceY);
+  // Serial.println(gForceZ);
 }
 
 void recordGyroRegisters() {
@@ -132,33 +133,10 @@ void printData() {
   float angle_y = ALPHA * gyro_y + (1.0 - ALPHA) * accel_angle_y;
   float angle_z = gyro_z;  //Accelerometer doesn't give z-angle
 
-  Serial.print("Angle X ");
-  Serial.println(angle_x);
-
-  Serial.print("Angle Y ");
-  Serial.println(angle_y);
-
-  Serial.print("Angle Z ");
-  Serial.println(angle_z);
-
   float servo_angle = map(angle_y, -3.2, 3.2, 0, 180);
+  Serial.println(servo_angle);
   Servo1.write(servo_angle);
   
   delay(500);
-
-  // Serial.print("Gyro (deg)");
-  // Serial.print(" X=");
-  // Serial.print(rotX);
-  // Serial.print(" Y=");
-  // Serial.print(rotY);
-  // Serial.print(" Z=");
-  // Serial.print(rotZ);
-  // Serial.print(" Accel (g)");
-  // Serial.print(" X=");
-  // Serial.print(gForceX);
-  // Serial.print(" Y=");
-  // Serial.print(gForceY);
-  // Serial.print(" Z=");
-  // Serial.println(gForceZ);
 }
 
