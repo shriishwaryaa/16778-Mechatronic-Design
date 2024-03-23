@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<robot name="simple_hexapod">
+
+  <!-- Base Link -->
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="0.6 0.4 0.1"/>
+      </geometry>
+      <origin xyz="0 0 0.35" rpy="0 0 0"/> <!-- Offset the base 0.35m above the ground -->
+      <material name="black"/>
+    </visual>
+  </link>
+
+  <!-- Legs -->
+  <!-- Note: This is a simplified representation. Each leg would realistically have more segments and joints. -->
+  <!-- Leg 1 -->
+  <joint name="leg1_joint1" type="revolute">
+    <parent link="base_link"/>
+    <child link="leg1_link1"/>
+    <origin xyz="0.2 0.15 0.3" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.57" upper="1.57" effort="100" velocity="1.0"/>
+  </joint>
+
+  <link name="leg1_link1">
+    <visual>
+      <geometry>
+        <cylinder radius="0.02" length="0.2"/>
+      </geometry>
+      <origin xyz="0 0 -0.1" rpy="0 0 0"/>
+      <material name="blue"/>
+    </visual>
+  </link>
+
+  <!-- Add definitions for other legs here, following the same pattern -->
+
+</robot>
