@@ -268,12 +268,12 @@ class HexapodSimulator:
 def test_ref_controller():
 	# this the reference controller from Cully et al., 2015 (Nature)
 	# ctrl = [1.0, 0.0, 0.5, 0.25, 0.75, 0.5, 1.0, 0.5, 0.5, 0.25, 0.25, 0.5]
-	ctrl = [1, 0, 0.5, 0.25, 0.25, 0.5, 1, 0.5, 0.5, 0.25, 0.75, 0.5, 1, 0, 0.5, 0.25, 0.25, 0.5, 1, 0, 0.5, 0.25, 0.75, 0.5, 1, 0.5, 0.5, 0.25, 0.25, 0.5, 1, 0, 0.5, 0.25, 0.75, 0.5]
+	ctrl = [1, 0, 0.5, 0.25, 0.75, 0.5, 1, 0.0, 0.5, 0.25, 0.25, 0.5, 1, 0.5, 0.5, 0.25, 0.25, 0.5, 1, 0.5, 0.5, 0.25, 0.75, 0.5, 1, 0.0, 0.5, 0.25, 0.75, 0.5, 1, 0.0, 0.5, 0.25, 0.25, 0.5]
 	simu = HexapodSimulator(gui=True)
 	controller = HexapodController(ctrl)
 	for i in range(0, int(3./simu.dt)): # seconds
 		simu.step(controller)
-		time.sleep(1.0/240.0*6)
+		time.sleep(1.0/240.0)
 	print("=>", simu.get_pos()[0])
 	simu.destroy()
 
