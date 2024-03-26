@@ -50,7 +50,7 @@ from pycontrollers.hexapod_controller import HexapodController
 
 class HexapodSimulator:
 	def __init__(self, gui=True, 
-				urdf=(os.path.dirname(os.path.abspath(__file__))+'/urdf/dance_robot.urdf'), 
+				urdf=(os.path.dirname(os.path.abspath(__file__))+'/urdf/pexod.urdf'), 
 				dt = 1./240.,  # the default for pybullet (see doc)
 				control_dt=0.05,
 				video=''):
@@ -71,7 +71,7 @@ class HexapodSimulator:
 		self.kp = 1./12.# * self.control_period
 		self.kd = 0.4
 		# the desired position for the joints
-		self.angles = np.zeros(18)
+		self.angles = np.zeros(4)
 		# setup the GUI (disable the useless windows)
 		if gui:
 			self.physics = bc.BulletClient(connection_mode=p.GUI)
@@ -99,9 +99,12 @@ class HexapodSimulator:
 		self.joint_list = self._make_joint_list(self.botId)
 
 		# bullet links number corresponding to the legs
-		self.leg_link_ids = [0,3,1,4]
-		self.descriptor = {0 : [], 3 : [], 1 : [], 4 : []}
+		# self.leg_link_ids = [0,3,1,4]
+		# self.descriptor = {0 : [], 3 : [], 1 : [], 4 : []}
 
+		self.leg_link_ids = [17, 14, 2, 5, 8, 11]
+		self.descriptor = {17 : [], 14 : [], 2 : [], 5 : [], 8 : [], 11 : []}
+		
 		# video makes things much slower
 		if (video != ''):
 			self._stream_to_ffmpeg(self.video_output_file)
@@ -146,6 +149,7 @@ class HexapodSimulator:
 	def step(self, controller):
 		if self.i % self.control_period == 0:
 			self.angles = controller.step(self)
+			print("self.angles at dt",self.angles)
 		self.i += 1
 		
 		# 24 FPS dt =1/240 : every 10 frames
@@ -198,7 +202,7 @@ class HexapodSimulator:
 			else:
 				cns.append(0)
 			self.descriptor[l] = cns
-
+		
 		# don't forget to add the gravity force!
 		self.physics.setGravity(0, 0, self.GRAVITY)
 
@@ -237,8 +241,15 @@ class HexapodSimulator:
 		self.ffmpeg_pipe = subprocess.Popen(command, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
 	def _make_joint_list(self, botId):
-		joint_names = [b'left_hip_yaw_joint', b'right_hip_yaw_joint', b'left_hip_pitch_joint',
-		b'right_hip_pitch_joint']
+		# joint_names = [b'left_hip_yaw_joint', b'right_hip_yaw_joint', b'left_hip_pitch_joint',
+		# b'right_hip_pitch_joint']
+		joint_names = [b'body_leg_0', b'leg_0_1_2',
+		b'body_leg_1', b'leg_1_1_2',
+		b'body_leg_2', b'leg_2_1_2',
+		b'body_leg_3', b'leg_3_1_2',
+		b'body_leg_4', b'leg_4_1_2',
+		b'body_leg_5', b'leg_5_1_2',
+		]
 		joint_list = []
 		for n in joint_names:
 			joint_found = False
@@ -249,19 +260,20 @@ class HexapodSimulator:
 					joint_found = True
 			if(joint_found==False):
 				joint_list += [1000] #if the joint is not here (aka broken leg case) put 1000
-		print("Joint list is ", joint_list)
+		print("Joint List: ", joint_list)
 		return joint_list
 
 
 # for an unkwnon reason, connect/disconnect works only if this is a function
 def test_ref_controller():
 	# this the reference controller from Cully et al., 2015 (Nature)
-	ctrl = [1.0, 0.5, 0.5, 0.25, 0.25, 0.5, 1.0, 0.5, 0.5, 0.25, 0.25, 0.5]
+	# ctrl = [1.0, 0.0, 0.5, 0.25, 0.75, 0.5, 1.0, 0.5, 0.5, 0.25, 0.25, 0.5]
+	ctrl = [1, 0, 0.5, 0.25, 0.25, 0.5, 1, 0.5, 0.5, 0.25, 0.75, 0.5, 1, 0, 0.5, 0.25, 0.25, 0.5, 1, 0, 0.5, 0.25, 0.75, 0.5, 1, 0.5, 0.5, 0.25, 0.25, 0.5, 1, 0, 0.5, 0.25, 0.75, 0.5]
 	simu = HexapodSimulator(gui=True)
 	controller = HexapodController(ctrl)
 	for i in range(0, int(3./simu.dt)): # seconds
 		simu.step(controller)
-		time.sleep(1.0/240.0)
+		time.sleep(1.0/240.0*6)
 	print("=>", simu.get_pos()[0])
 	simu.destroy()
 

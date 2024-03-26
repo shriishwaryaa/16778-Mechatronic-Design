@@ -38,6 +38,7 @@
 import numpy as np
 import math
 from .open_loop_controller import OpenLoopController
+import matplotlib.pyplot as plt
 
 class HexapodController(OpenLoopController):
     ''' 
@@ -49,11 +50,13 @@ class HexapodController(OpenLoopController):
         self.trajs = self._compute_trajs(params, array_dim)
 
     def _compute_trajs(self, p, array_dim):
-        trajs = np.zeros((2 * 2, array_dim))
+        trajs = np.zeros((6 * 2, array_dim))
+        time = np.linspace(0, 1, array_dim)  # Example time axis
         k = 0
-        for i in range(0, 12, 6):
+        for i in range(0, 36, 6):
             trajs[k,:] =  0.5 * self._control_signal(p[i], p[i + 1], p[i + 2], array_dim)
             trajs[k+1,:] = self._control_signal(p[i + 3], p[i + 4], p[i + 5], array_dim)
             # trajs[k+2,:] = trajs[k+1,:]
             k += 2
+            
         return trajs * math.pi / 4.0
