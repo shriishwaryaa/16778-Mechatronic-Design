@@ -34,7 +34,6 @@ void setup() {
   pinMode(pitchStepPin, OUTPUT);
   pinMode(yawDirPin, OUTPUT);
   pinMode(yawStepPin, OUTPUT);
-  pinMode(8, OUTPUT);
   Serial.begin(9600);
 
   // Set the spinning direction CW/CCW:
@@ -54,7 +53,7 @@ void loop() {
   motorData = data.substring(data.indexOf('$') + 1);
   
   float angle = angleData.toFloat();
-  int motor = motorData.toFloat();
+  float motor = motorData.toFloat();
 
   if (motor == 0) {
     stepPin = pitchStepPin;
@@ -64,15 +63,16 @@ void loop() {
     stepPin = yawStepPin;
     dirPin = yawDirPin;
   }
-
   
-  int div = 360 / angle;
-  int total_steps = STEPS_PER_REV_GEARBOX / div;
-  // Serial.println(dirPin);
-  // Serial.println(stepPin);
+  if (angle < 0) {
+    digitalWrite(dirPin, LOW);
+  }
+  else {
+    digitalWrite(dirPin, HIGH);
+  }
 
-  // Serial.println(motor);
-  // Serial.println(angle);
+  int div = 360 / abs(angle);
+  int total_steps = STEPS_PER_REV_GEARBOX / div;
 
   for (int i = 0; i < total_steps; i++) {
     digitalWrite(stepPin, HIGH);
