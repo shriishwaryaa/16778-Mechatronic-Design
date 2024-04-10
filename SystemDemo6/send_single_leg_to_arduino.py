@@ -1,63 +1,86 @@
-import os
-import time
-import math
-from timeit import default_timer as timer
-import subprocess 
-import time
-import numpy as np
-import threading
-import serial
+/* Example sketch to control a stepper motor with TB6600 stepper motor driver 
+  and Arduino without a library: continuous rotation. 
+  More info: https://www.makerguides.com */
 
-ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
+// Remember that gearbox ratio is 1:40
+// One rev of the stepper is 3200 steps
+// 360 degrees_stepper = 3200 steps
+// 360 degrees_gearbox = 3200 * 40 steps
 
-def init_serial():
-  ser.reset_input_buffer()
-  time.sleep(1)
+// therefore, say 22.5 degrees on gearbox: 360/16 = 3200 * 40 / 16
 
-def send_pitch(angle):
-  # TODO : put while True if this doesnt work :)
-  i = 0
-  ser.write((str(angle) + "$" + str("0") + '\n').encode('utf-8'))  # Ensure Arduino knows the end of the data
-  print("Finished sending pitch")
+// Define stepper motor connections:
+#define pitchDirPin 2
+#define pitchStepPin 3
+#define yawDirPin 5
+#define yawStepPin 6
 
-def send_yaw(angle):
-  # TODO : put while True if this doesnt work :)
-  ser.write((str(angle) + "$" + str("1") + '\n').encode('utf-8'))  # Ensure Arduino knows the end of the data
-  print("Finished sending yaw")
+#define STEPS_PER_REV_STEPPER 3200
 
-def wait_for_ack():
-  while True:
-    try:
-      # line = ser.readline().decode('utf-8').rstrip()
-      line=ser.readline().decode('utf-8').rstrip()
-     # print("This is the line:" + line)
-      while line != "ok":
-        # print("This is the line:" + line)
-         line=ser.readline().decode('utf-8').rstrip()
-      return
-    except UnicodeDecodeError:
-      print("Received bytes couldn't be decoded as UTF-8. Ensure the Arduino is sending valid UTF-8 strings.")
+#define STEPS_PER_REV_GEARBOX 128000
 
-def main():
-  init_serial()
-  print("Initialized serial")
+int stepPin = -1;
+int dirPin = -1;
 
-  # send pitch angle to both motors first
-  send_pitch(5)
-  wait_for_ack()
-  time.sleep(1)
+bool done = false;
 
-  send_yaw(10)
-  wait_for_ack()
-  time.sleep(1)
+String data = "";
+String angleData = "";
+String motorData = "";
 
-  send_pitch(0)
-  wait_for_ack()
-  time.sleep(1)
+void setup() {
+  // Declare pins as output:
+  pinMode(pitchDirPin, OUTPUT);
+  pinMode(pitchStepPin, OUTPUT);
+  pinMode(yawDirPin, OUTPUT);
+  pinMode(yawStepPin, OUTPUT);
+  Serial.begin(9600);
 
-  ser.close()
+  // Set the spinning direction CW/CCW:
+  digitalWrite(yawDirPin, HIGH);
+  digitalWrite(pitchDirPin, HIGH);
+}
 
-if __name__=="__main__":
-  main()
-~                                                                                                                                                                                                           
-                                                                                                                                                                                          6,8           All
+void loop() {
+  
+  // read single angle from raspberry pi
+  while (Serial.available() == 0) {
+    
+  }
+  // Serial.println(data);
+  data = Serial.readStringUntil('\n');
+  angleData = data.substring(0, data.indexOf('$'));
+  motorData = data.substring(data.indexOf('$') + 1);
+  
+  float angle = angleData.toFloat();
+  float motor = motorData.toFloat();
+
+  if (motor == 0) {
+    stepPin = pitchStepPin;
+    dirPin = pitchDirPin;
+  }
+  else {
+    stepPin = yawStepPin;
+    dirPin = yawDirPin;
+  }
+  
+  if (angle < 0) {
+    digitalWrite(dirPin, LOW);
+  }
+  else {
+    digitalWrite(dirPin, HIGH);
+  }
+
+  int div = 360 / abs(angle);
+  int total_steps = STEPS_PER_REV_GEARBOX / div;
+
+  for (int i = 0; i < total_steps; i++) {
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(500);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(500);
+  }
+
+  Serial.println("ok");
+  delay(1000);
+}
