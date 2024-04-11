@@ -4,11 +4,17 @@ import time
 
 threads = []
 
-ard1 = "/dev/ttyACM0"
-ard2 = "/dev/ttyACM1"
+ard1 = "/dev/arduino_0"
+ard2 = "/dev/arduino_1"
 
 ser1 = None
 ser2 = None
+
+def calculate_delay(angle):
+  # 5 degrees to 2 seconds
+  # angle is in degrees
+  delay = (abs(angle) // 10) * 2
+  return delay
 
 def l1_thread():
   global ser1
@@ -17,17 +23,17 @@ def l1_thread():
   print("Inside L1")
   angle = 5
   ser1.write((str(angle) + "$" + str(0) + '\n').encode('utf-8'))
-  time.sleep(2)
+  time.sleep(calculate_delay(angle))
   print("Maga L1 pitch reached ", angle, "degrees")
 
   angle = 10
   ser1.write((str(angle) + "$" + str(1) + '\n').encode('utf-8'))
-  time.sleep(2)
+  time.sleep(calculate_delay(angle))
   print("Maga L1 pitch reached ", angle, "degrees")
 
   angle = -5
   ser1.write((str(angle) + "$" + str(0) + '\n').encode('utf-8'))
-  time.sleep(2)
+  time.sleep(calculate_delay(angle))
   print("Maga L1 pitch reached ", angle, "degrees")
 
 def l2_thread():
@@ -37,17 +43,17 @@ def l2_thread():
   print("Inside L2")
   angle = 5
   ser2.write((str(angle) + "$" + str(0) + '\n').encode('utf-8'))
-  time.sleep(2)
+  time.sleep(calculate_delay(angle))
   print("Maga L2 pitch reached ", angle, "degrees")
 
   angle = 10
   ser2.write((str(angle) + "$" + str(1) + '\n').encode('utf-8'))
-  time.sleep(2)
+  time.sleep(calculate_delay(angle))
 
   angle = -5
   print("Maga L1 pitch reached ", angle, "degrees")
   ser2.write((str(angle) + "$" + str(0) + '\n').encode('utf-8'))
-  time.sleep(2)
+  time.sleep(calculate_delay(angle))
   print("Maga L2 pitch reached ", angle, "degrees")
 
 def main():
