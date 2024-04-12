@@ -33,6 +33,9 @@ class DanceRobot():
 
     for leg in legs:
       # motors = [(2 * leg), (2 * leg) + 1]
+      # Motor 0 is yaw motor
+      # Motor 1 is pitch motor
+      
       self.legs_to_motors[leg].append(2*leg)
       self.legs_to_motors[leg].append((2*leg) + 1)
 
@@ -68,11 +71,11 @@ class DanceRobot():
       time.sleep(0.1)
 
   def write_angle_pitch(self, leg, serial_port, angle):
-    serial_port.write((str(angle) + "$" + str(self.legs_to_motors[leg][0]) + '\n').encode('utf-8'))
+    serial_port.write((str(angle) + "$" + str(self.legs_to_motors[leg][1]) + '\n').encode('utf-8'))
     time.sleep(self.calculate_delay(angle)) 
 
   def write_angle_yaw(self, leg, serial_port, angle):
-    serial_port.write((str(angle) + "$" + str(self.legs_to_motors[leg][1]) + '\n').encode('utf-8'))
+    serial_port.write((str(angle) + "$" + str(self.legs_to_motors[leg][0]) + '\n').encode('utf-8'))
     time.sleep(self.calculate_delay(angle)) 
 
   def send_pitch(self, legs, angle):
