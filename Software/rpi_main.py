@@ -50,95 +50,81 @@ class DanceRobot():
     delay = (abs(angle) // 10) * 2
     return delay
   
+  def send_pitch(self, leg, angle):
+    # TODO - verify that the odd motors are the pitch motors
+    motor_id = self.legs_to_motors[leg][1]
+    serial_port = self.map_leg_serial[leg] 
+    serial_port.write((str(angle) + "$" + str(self.legs_to_motors[leg][0]) + '\n').encode('utf-8'))
+    time.sleep(self.calculate_delay(angle))
+
+  def send_yaw(self, leg, angle):
+    # TODO - verify that the odd motors are the yaw motors
+    motor_id = self.legs_to_motors[leg][0]
+    serial_port = self.map_leg_serial[leg] 
+    serial_port.write((str(angle) + "$" + str(self.legs_to_motors[leg][0]) + '\n').encode('utf-8'))
+    time.sleep(self.calculate_delay(angle))
+
   def move_forward_basic(self):
     # Basic tripod - legs 0, 3, 4 lift up move forward and down
     #                legs 1, 2, 5 lift up and move forward and then down
+    # Pitch angles - [5, -5]
+    # Yaw angles - [10]
+    fwd_threads = []
     angle = 5
+
     for leg in self.tripod_1:
-      serial_port = self.map_leg_serial[leg]
-      # First to pitch
-      serial_port.write((str(angle) + "$" + str(self.legs_to_motors[leg][0]) + '\n').encode('utf-8'))
-      time.sleep(self.calculate_delay(angle))
+      new_thread = threading.Thread(target=self.send_pitch, args=[leg, angle])
+      new_thread.start()
+      fwd_threads.append(new_thread)
 
     angle = 10
+
     for leg in self.tripod_1:
-      serial_port = self.map_leg_serial[leg]
-      # Then to yaw
-      serial_port.write((str(angle) + "$" + str(self.legs_to_motors[leg][1]) + '\n').encode('utf-8'))
-      time.sleep(self.calculate_delay(angle))
+      new_thread = threading.Thread(target=self.send_yaw, args=[leg, angle])
+      new_thread.start()
+      fwd_threads.append(new_thread)
 
     angle = -5
     for leg in self.tripod_1:
-      serial_port = self.map_leg_serial[leg]
-      # Then to pitch
-      serial_port.write((str(angle) + "$" + str(self.legs_to_motors[leg][0]) + '\n').encode('utf-8'))
-      time.sleep(self.calculate_delay(angle))
+      new_thread = threading.Thread(target=self.send_pitch, args=[leg, angle])
+      new_thread.start()
+      fwd_threads.append(new_thread)
 
-    angle = 5
-    for leg in self.tripod_2:
-      serial_port = self.map_leg_serial[leg]
-      # First to pitch
-      serial_port.write((str(angle) + "$" + str(self.legs_to_motors[leg][0]) + '\n').encode('utf-8'))
-      time.sleep(self.calculate_delay(angle))
-
-    angle = 10
-    for leg in self.tripod_2:
-      serial_port = self.map_leg_serial[leg]
-      # Then to yaw
-      serial_port.write((str(angle) + "$" + str(self.legs_to_motors[leg][1]) + '\n').encode('utf-8'))
-      time.sleep(self.calculate_delay(angle))
-
-    angle = -5
-    for leg in self.tripod_2:
-      serial_port = self.map_leg_serial[leg]
-      # Then to pitch
-      serial_port.write((str(angle) + "$" + str(self.legs_to_motors[leg][0]) + '\n').encode('utf-8'))
-      time.sleep(self.calculate_delay(angle))
+    for t in fwd_threads:
+      t.join()
+    
+    print("Done moving forward")
   
   def move_backward_basic(self):
     # Basic tripod - legs 0, 3, 4 lift up move forward and down
     #                legs 1, 2, 5 lift up and move forward and then down
+    # Pitch angles - [5, -5]
+    # Yaw angles - [10]
+    bkwd_threads = []
     angle = 5
+
     for leg in self.tripod_1:
-      serial_port = self.map_leg_serial[leg]
-      # First to pitch
-      serial_port.write((str(angle) + "$" + str(self.legs_to_motors[leg][0]) + '\n').encode('utf-8'))
-      time.sleep(self.calculate_delay(angle))
+      new_thread = threading.Thread(target=self.send_pitch, args=[leg, angle])
+      new_thread.start()
+      bkwd_threads.append(new_thread)
 
     angle = -10
+
     for leg in self.tripod_1:
-      serial_port = self.map_leg_serial[leg]
-      # Then to yaw
-      serial_port.write((str(angle) + "$" + str(self.legs_to_motors[leg][1]) + '\n').encode('utf-8'))
-      time.sleep(self.calculate_delay(angle))
+      new_thread = threading.Thread(target=self.send_yaw, args=[leg, angle])
+      new_thread.start()
+      bkwd_threads.append(new_thread)
 
     angle = -5
     for leg in self.tripod_1:
-      serial_port = self.map_leg_serial[leg]
-      # Then to pitch
-      serial_port.write((str(angle) + "$" + str(self.legs_to_motors[leg][0]) + '\n').encode('utf-8'))
-      time.sleep(self.calculate_delay(angle))
+      new_thread = threading.Thread(target=self.send_pitch, args=[leg, angle])
+      new_thread.start()
+      bkwd_threads.append(new_thread)
 
-    angle = 5
-    for leg in self.tripod_2:
-      serial_port = self.map_leg_serial[leg]
-      # First to pitch
-      serial_port.write((str(angle) + "$" + str(self.legs_to_motors[leg][0]) + '\n').encode('utf-8'))
-      time.sleep(self.calculate_delay(angle))
-
-    angle = -10
-    for leg in self.tripod_2:
-      serial_port = self.map_leg_serial[leg]
-      # Then to yaw
-      serial_port.write((str(angle) + "$" + str(self.legs_to_motors[leg][1]) + '\n').encode('utf-8'))
-      time.sleep(self.calculate_delay(angle))
-
-    angle = -5
-    for leg in self.tripod_2:
-      serial_port = self.map_leg_serial[leg]
-      # Then to pitch
-      serial_port.write((str(angle) + "$" + str(self.legs_to_motors[leg][0]) + '\n').encode('utf-8'))
-      time.sleep(self.calculate_delay(angle))
+    for t in bkwd_threads:
+      t.join()
+    
+    print("Done moving backward")
 
 def main():
   # Initialize Dance Robot
@@ -147,17 +133,15 @@ def main():
   TeamA.init_serial()
 
   # Spawn a thread to listen to Joystick 
-  joystick_thread = threading.Thread(target=TeamA.Joystick.joystick_listen)
-  joystick_thread.start()
-  dancing_threads.append(joystick_thread)
+  # joystick_thread = threading.Thread(target=TeamA.Joystick.joystick_listen)
+  # joystick_thread.start()
+  # dancing_threads.append(joystick_thread)
 
-  forward_thread = threading.Thread(target=TeamA.move_backward_basic)
-  forward_thread.start()
-  dancing_threads.append(forward_thread)
+  print("Moving forward now")
+  TeamA.move_forward_basic()
 
-  backward_thread = threading.Thread(target=TeamA.move_backward_basic)
-  backward_thread.start()
-  dancing_threads.append(backward_thread)
+  print("Moving backward now")
+  TeamA.move_backward_basic()
 
   for t in dancing_threads:
     t.join()
