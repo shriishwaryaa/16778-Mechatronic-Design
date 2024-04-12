@@ -19,6 +19,9 @@ class DanceRobot():
     self.Joystick = JoystickController(interface="/dev/input/js0", connecting_using_ds4drv=False)
     self.Estop = False
     self.serial_ports = ["/dev/arduino_0", "/dev/arduino_1", "/dev/arduino_2"]
+
+    self.imu_serial_dev = "/dev/arduino_imu"
+
     self.serial_port_handlers = []
     self.tripod_1 = [0,3,4]
     self.tripod_2 = [1,2,5]
@@ -35,6 +38,9 @@ class DanceRobot():
     self.backward_angles_basic = [5, -10, -5]
     self.map_leg_serial = defaultdict(list)
 
+    self.imu_serial_port = serial.Serial(self.imu_serial_dev, 115200, timeout=1)
+    self.imu_serial_port.reset_input_buffer()
+
   def init_serial(self):
     for i in range(len(self.serial_ports)):
       serial_port = serial.Serial(self.serial_ports[i], 9600, timeout=1)
@@ -49,6 +55,15 @@ class DanceRobot():
   # angle is in degrees
     delay = (abs(angle) // 10) * 2
     return delay
+  
+  def read_imu_data(self):
+    # this needs to read pitch, roll and yaw
+    while True:
+      line = self.imu_serial_port.readline().decode('utf-8').strip()
+      if line:
+          print("IMU reading")
+          print(line)
+      time.sleep(0.1)
   
   def send_pitch(self, leg, angle):
     # TODO - verify that the odd motors are the pitch motors
@@ -136,6 +151,10 @@ def main():
   # joystick_thread = threading.Thread(target=TeamA.Joystick.joystick_listen)
   # joystick_thread.start()
   # dancing_threads.append(joystick_thread)
+
+  imu_thread = threading.Thread(target=TeamA.read_imu_data)
+  imu_thread.start()
+  dancing_threads.append(imu_thread)
 
   print("Moving forward now")
   TeamA.move_forward_basic()
