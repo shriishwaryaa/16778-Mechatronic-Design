@@ -46,6 +46,7 @@ void setup() {
   Serial.begin(9600);
 }
 
+
 void loop() {
   // put your main code here, to run repeatedly:
   while (Serial.available() == 0) {
@@ -59,6 +60,9 @@ void loop() {
 
   angle_data = data.substring(0, data.indexOf('$'));
   motor_data = data.substring(data.indexOf('$') + 1);
+
+  Serial.println(angle_data);
+  Serial.println(motor_data);
 
   float angle = angle_data.toFloat();
   float motor = motor_data.toFloat();
