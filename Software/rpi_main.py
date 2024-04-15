@@ -25,8 +25,8 @@ class DanceRobot():
     # self.imu_serial_dev = "/dev/arduino_imu"
 
     self.serial_port_handlers = []
-    # self.tripod_1 = [0,3,4]
     self.tripod_1 = [1,2,5]
+    self.tripod_2 = [0,3,4]
 
     legs = [0, 1, 2, 3, 4, 5]
     self.legs_to_motors = defaultdict(list)
@@ -90,14 +90,18 @@ class DanceRobot():
 
   def write_angle_pitch(self, leg, serial_port, angle):
     motor_id = self.legs_to_motors[leg][1] % 4
+    print("Sending pitch to motor ", motor_id, "leg ", leg, serial_port.port)
     cmd = str(angle) + "$" + str(motor_id)
+    print("Cmd: ", cmd)
     serial_port.write((cmd + '\n').encode('utf-8'))
     time.sleep(self.calculate_delay(angle)) 
     # self.wait_for_ack(serial_port)
 
   def write_angle_yaw(self, leg, serial_port, angle):
     motor_id = self.legs_to_motors[leg][0] % 4
+    print("Sending pitch to motor ", motor_id, "leg ", leg, serial_port.port)
     cmd = str(angle) + "$" + str(motor_id)
+    print("Cmd: ", cmd)
     serial_port.write((cmd + '\n').encode('utf-8'))
     time.sleep(self.calculate_delay(angle)) 
     # self.wait_for_ack(serial_port)
@@ -141,13 +145,30 @@ class DanceRobot():
     angle = 5
     # send pitch angle to the tripod one
     self.send_pitch(self.tripod_1, angle)
+    time.sleep(3)
 
     angle = 10
     self.send_yaw(self.tripod_1, angle)
+    time.sleep(3)
 
     angle = -5
     # send pitch angle to the tripod one
     self.send_pitch(self.tripod_1, angle)
+    time.sleep(3)
+
+    angle = 5
+    # send pitch angle to the tripod one
+    self.send_pitch(self.tripod_2, angle)
+    time.sleep(3)
+
+    angle = 10
+    self.send_yaw(self.tripod_2, angle)
+    time.sleep(3)
+
+    angle = -5
+    # send pitch angle to the tripod one
+    self.send_pitch(self.tripod_2, angle)
+    time.sleep(3)
     
     print("Done moving forward")
   
@@ -166,6 +187,18 @@ class DanceRobot():
     angle = -5
     # send pitch angle to the tripod one
     self.send_pitch(self.tripod_1, angle)
+
+    angle = 5
+    # send pitch angle to the tripod one
+    self.send_pitch(self.tripod_2, angle)
+
+    angle = -10
+    self.send_yaw(self.tripod_2, angle)
+
+    angle = -5
+    # send pitch angle to the tripod one
+    self.send_pitch(self.tripod_2, angle)
+
     print("Done moving backward")
 
 def main():
