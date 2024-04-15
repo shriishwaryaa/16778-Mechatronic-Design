@@ -1,12 +1,12 @@
 #define L0_YAW_MOTOR_DIR_PIN 2
 #define L0_YAW_MOTOR_STEP_PIN 3
-#define L0_PITCH_MOTOR_DIR_PIN 4
-#define L0_PITCH_MOTOR_STEP_PIN 5
+#define L0_PITCH_MOTOR_DIR_PIN 7
+#define L0_PITCH_MOTOR_STEP_PIN 6
 
-#define L1_YAW_MOTOR_DIR_PIN 7
-#define L1_YAW_MOTOR_STEP_PIN 6
-#define L1_PITCH_MOTOR_DIR_PIN 8
-#define L1_PITCH_MOTOR_STEP_PIN 9
+#define L1_YAW_MOTOR_DIR_PIN 8
+#define L1_YAW_MOTOR_STEP_PIN 9
+#define L1_PITCH_MOTOR_DIR_PIN 12
+#define L1_PITCH_MOTOR_STEP_PIN 11
 
 // #define STEPS_PER_REV_STEPPER 3200
 // Configuration on driver - 1 0 0 0 1 0 :DDDDDDD - Note - with 800 steps :))))))
@@ -70,18 +70,54 @@ void loop() {
   if (motor == 0) {
     step_pin = L0_YAW_MOTOR_STEP_PIN;
     dir_pin = L0_YAW_MOTOR_DIR_PIN;
+
+    // Serial.print("Motor ");
+    // Serial.println(motor);
+    
+    // Serial.print("step pin: ");
+    // Serial.println(step_pin);
+
+    // Serial.print("dir pin: ");
+    // Serial.println(dir_pin);
   }
   else if (motor == 1){
     step_pin = L0_PITCH_MOTOR_STEP_PIN;
     dir_pin = L0_PITCH_MOTOR_DIR_PIN;
+
+    // Serial.print("Motor ");
+    // Serial.println(motor);
+
+    // Serial.print("step pin: ");
+    // Serial.println(step_pin);
+
+    // Serial.print("dir pin: ");
+    // Serial.println(dir_pin);
   }
   else if (motor == 2) {
     step_pin = L1_YAW_MOTOR_STEP_PIN;
     dir_pin = L1_YAW_MOTOR_DIR_PIN;
+
+    // Serial.print("Motor ");
+    // Serial.println(motor);
+
+    // Serial.print("step pin: ");
+    // Serial.println(step_pin);
+
+    // Serial.print("dir pin: ");
+    // Serial.println(dir_pin);
   }
   else {
     step_pin = L1_PITCH_MOTOR_STEP_PIN;
     dir_pin = L1_PITCH_MOTOR_DIR_PIN;
+
+    // Serial.print("Motor ");
+    // Serial.println(motor);
+
+    // Serial.print("step pin: ");
+    // Serial.println(step_pin);
+
+    // Serial.print("dir pin: ");
+    // Serial.println(dir_pin);
   }
   
   if (angle < 0) {
