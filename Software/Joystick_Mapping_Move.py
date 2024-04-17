@@ -21,7 +21,7 @@ class MyController(Controller):
 
       cmd = str(angle) + "$" + str(motor_id)
       print("Command", cmd)
-      serial_ports[0].write((cmd + '\n').encode('utf-8'))
+      serial_port_handlers[0].write((cmd + '\n').encode('utf-8'))
 
     def handle_tri(self):
       print("Inside handle tri function")
@@ -30,7 +30,7 @@ class MyController(Controller):
 
       cmd = str(angle) + "$" + str(motor_id)
       print("Command", cmd)
-      serial_ports[0].write((cmd + '\n').encode('utf-8'))
+      serial_port_handlers[0].write((cmd + '\n').encode('utf-8'))
 
     def handle_cir(self):
       print("Inside handle circle function ")
@@ -39,7 +39,7 @@ class MyController(Controller):
 
       cmd = str(angle) + "$" + str(motor_id)
       print("Command", cmd)
-      serial_ports[0].write((cmd + '\n').encode('utf-8'))
+      serial_port_handlers[0].write((cmd + '\n').encode('utf-8'))
 
     def handle_sqr(self):
       print("Inside the handle square function ")
@@ -48,7 +48,7 @@ class MyController(Controller):
 
       cmd = str(angle) + "$" + str(motor_id)
       print("Command", cmd)
-      serial_ports[0].write((cmd + '\n').encode('utf-8'))
+      serial_port_handlers[0].write((cmd + '\n').encode('utf-8'))
 
     def on_x_press(self):
       print("Moving backward")
@@ -101,3 +101,5 @@ def main():
   for s in serial_port_handlers:
     s.close()
 
+if __name__=="__main__":
+  main()
