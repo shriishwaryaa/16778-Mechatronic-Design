@@ -1,5 +1,12 @@
 from pyPS4Controller.controller import Controller
 import threading 
+import serial
+import time
+
+from collections import defaultdict
+
+serial_ports = ["/dev/arduino_0", "/dev/arduino_1"]
+serial_port_handlers = []
 
 class MyController(Controller):
 
@@ -7,20 +14,41 @@ class MyController(Controller):
         Controller.__init__(self, **kwargs)
     
     def handle_x(self):
+      # Move motor 1 by 5 degrees
       print("Inside handle x function")
-      pass
+      motor_id = 0
+      angle = 5
+
+      cmd = str(angle) + "$" + str(motor_id)
+      print("Command", cmd)
+      serial_ports[0].write((cmd + '\n').encode('utf-8'))
 
     def handle_tri(self):
       print("Inside handle tri function")
-      pass
+      motor_id = 1
+      angle = 5
+
+      cmd = str(angle) + "$" + str(motor_id)
+      print("Command", cmd)
+      serial_ports[0].write((cmd + '\n').encode('utf-8'))
 
     def handle_cir(self):
       print("Inside handle circle function ")
-      pass
+      motor_id = 0
+      angle = -5
+
+      cmd = str(angle) + "$" + str(motor_id)
+      print("Command", cmd)
+      serial_ports[0].write((cmd + '\n').encode('utf-8'))
 
     def handle_sqr(self):
       print("Inside the handle square function ")
-      pass
+      motor_id = 0
+      angle = -5
+
+      cmd = str(angle) + "$" + str(motor_id)
+      print("Command", cmd)
+      serial_ports[0].write((cmd + '\n').encode('utf-8'))
 
     def on_x_press(self):
       print("Moving backward")
@@ -50,6 +78,18 @@ class MyController(Controller):
 def main():
   print("Inside main joystick function")
 
+  global serial_ports
+  global serial_port_handlers
+
+  for i in range(len(serial_ports)):
+    serial_port = serial.Serial(serial_ports[i], 9600, timeout=1)
+    serial_port.reset_input_buffer()
+    serial_port_handlers.append(serial_port)
+
+  time.sleep(5)
+
+  print("Serial ports initialized")
+
   controller = MyController(interface="/dev/input/js0", connecting_using_ds4drv=False)
   # you can start listening before controller is paired, as long as you pair it within the timeout window
   controller.listen(timeout=60)
@@ -57,3 +97,7 @@ def main():
   main_joystick_thread = threading.Thread(target=controller)
   main_joystick_thread.start()
   main_joystick_thread.join()
+
+  for s in serial_port_handlers:
+    s.close()
+
