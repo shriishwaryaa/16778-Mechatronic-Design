@@ -5,8 +5,8 @@ import csv
 import math
 threads = []
 filename = 'output_joint_data.csv'
-ard1 = "/dev/ttyACM0"
-# ard2 = "/dev/arduino_1"
+ard1 = "/dev/ttyACM1"
+ard2 = "/dev/arduino_0"
 
 def find_row_by_first_column(filename, search_value):
     with open(filename, mode='r') as file:
@@ -28,11 +28,14 @@ def find_row_by_first_column(filename, search_value):
 
 result_row0 = find_row_by_first_column(filename, '6')
 result_row1 = find_row_by_first_column(filename, '7')
+result_row2 = find_row_by_first_column(filename, '0')
+result_row3 = find_row_by_first_column(filename, '1')
 
-if result_row0 and result_row1:
-    print("Found row with float conversion where possible:", result_row0, result_row1)
-else:
-    print("No row found with that value.")
+
+# if result_row0 and result_row1:
+#     print("Found row with float conversion where possible:", result_row0, result_row1)
+# else:
+#     print("No row found with that value.")
 
 
 ser1 = None
@@ -49,58 +52,61 @@ def l1_thread():
   global ser2
   time.sleep(2)
   print("Inside L1")
-  angle = 5
-  ser1.write((str(angle) + "$" + str(0) + '\n').encode('utf-8'))
-  time.sleep(calculate_delay(angle))
-  print("Maga L1 pitch reached ", angle, "degrees")
 
-  angle = 10
-  ser1.write((str(angle) + "$" + str(1) + '\n').encode('utf-8'))
-  time.sleep(calculate_delay(angle))
-  print("Maga L1 pitch reached ", angle, "degrees")
+  cmd=""
 
-  angle = -5
-  ser1.write((str(angle) + "$" + str(0) + '\n').encode('utf-8'))
-  time.sleep(calculate_delay(angle))
-  print("Maga L1 pitch reached ", angle, "degrees")
+  for i in range(len(result_row0)):
+    # angle=math.degrees(result_row0[i])
+    # 0$5$1$10$2$15$3$20'
+    cmd=""
+    # cmd += str(0) + "$" + str(math.degrees(result_row0[i])) + "$" + str(1) + "$" + str(math.degrees(result_row0[i])) + "$" + str(2) + "$" + str(math.degrees(result_row1[i])) + "$" + str(3) + "$" + str(math.degrees(result_row1[i]))
+    cmd += str(0) + "$" + str(int(math.degrees(result_row0[i]))) + "$" + str(1) + "$" + str(int(math.degrees(result_row1[i])))
+    # print("Command is ", cmd)
+    ser1.write((cmd+'\n').encode('utf-8'))
+    time.sleep(0.5)
+
 
 def l2_thread():
   global ser1
   global ser2
   time.sleep(2)
   print("Inside L2")
-  angle = 5
-  ser2.write((str(angle) + "$" + str(0) + '\n').encode('utf-8'))
-  time.sleep(calculate_delay(angle))
-  print("Maga L2 pitch reached ", angle, "degrees")
 
-  angle = 10
-  ser2.write((str(angle) + "$" + str(1) + '\n').encode('utf-8'))
-  time.sleep(calculate_delay(angle))
+  cmd=""
 
-  angle = -5
-  print("Maga L1 pitch reached ", angle, "degrees")
-  ser2.write((str(angle) + "$" + str(0) + '\n').encode('utf-8'))
-  time.sleep(calculate_delay(angle))
-  print("Maga L2 pitch reached ", angle, "degrees")
+  for i in range(len(result_row2)):
+    # angle=math.degrees(result_row2[i])
+    cmd=""
+    # 0$5$1$10$2$15$3$20'
+    # cmd += str(0) + "$" + str(math.degrees(result_row2[i])) + "$" + str(1) + "$" + str(math.degrees(result_row2[i])) + "$" + str(2) + "$" + str(math.degrees(result_row3[i])) + "$" + str(3) + "$" + str(math.degrees(result_row3[i]))
+    cmd += str(0) + "$" + str(int(math.degrees(result_row2[i]))) + "$" + str(1) + "$" + str(int(math.degrees(result_row3[i])))
+    # print("Command is ", cmd)
+    ser2.write((cmd+'\n').encode('utf-8'))
+    time.sleep(0.5)
 
 def main():
   global ser1
   global ser2
+  global threads
+
   ser1 = serial.Serial(ard1, 9600, timeout=1)
   ser1.reset_input_buffer()
 
-  for i in range(len(result_row0)):
-    angle=math.degrees(result_row0[i])
-    ser1.write((str(angle) + "$" + str(0) + '\n').encode('utf-8'))
+  ser2 = serial.Serial(ard2, 9600, timeout=1)
+  ser2.reset_input_buffer()
 
-    # send one line for all motors 
-    # angle1$0$angle2$1$angle3$2$angle4
+  time.sleep(2)
 
-    time.sleep(0.1)
-    angle=math.degrees(result_row0[i])
-    ser1.write((str(angle) + "$" + str(1) + '\n').encode('utf-8'))
-    time.sleep(0.)
+  thread1 = threading.Thread(target=l1_thread)
+  thread1.start()
+  threads.append(thread1)
+
+  thread2 = threading.Thread(target=l2_thread)
+  thread2.start()
+  threads.append(thread2)
+
+  for t in threads:
+    t.join()
 
   print("BYE maga")
 
