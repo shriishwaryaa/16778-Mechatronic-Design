@@ -2,18 +2,20 @@
 import os
 import time
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import threading 
 import serial
 from collections import defaultdict
 
 # from pyPS4Controller.controller import Controller
-
+from joystick import Controller
 # Global list to store all the threads 
 dancing_threads = []
 
-class DanceRobot():
-  def __init__(self):
+class DanceRobot(Controller):
+  def __init__(self, interface, **kwargs):
+    super().__init__(interface=interface, **kwargs)
+
     print("Hello from Dance Robot")
     # self.Joystick = JoystickController(interface="/dev/input/js0", connecting_using_ds4drv=False)
     self.Estop = False
@@ -56,7 +58,10 @@ class DanceRobot():
 
     time.sleep(2) 
 
-  
+  def on_x_press(self):
+    print("moving_bkwd overridden")
+    self.move_forward_basic()
+
   def calculate_delay(self, angle):
   # 5 degrees to 2 seconds
   # angle is in degrees
@@ -248,21 +253,22 @@ class DanceRobot():
 
 def main():
   # Initialize Dance Robot
-  TeamA = DanceRobot()
+  TeamA = DanceRobot(interface="/dev/input/js0")
+  # TeamA = DanceRobot()
   # Initialize all the serial ports
   TeamA.init_serial()
 
   # # Spawn a thread to listen to Joystick 
-  # joystick_thread = threading.Thread(target=TeamA.Joystick.joystick_listen)
-  # joystick_thread.start()
-  # dancing_threads.append(joystick_thread)
+  joystick_thread = threading.Thread(target=TeamA.listen)
+  joystick_thread.start()
+  dancing_threads.append(joystick_thread)
 
   # imu_thread = threading.Thread(target=TeamA.read_imu_data)
   # imu_thread.start()
   # dancing_threads.append(imu_thread)
 
   # print("Moving forward now")
-  TeamA.move_forward_basic()
+  # TeamA.move_forward_basic()
 
   # print("Moving backward now")
   # TeamA.turn_right()
