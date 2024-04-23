@@ -1,6 +1,7 @@
 // #define L0_YAW_MOTOR_DIR_PIN 2
 // #define L0_YAW_MOTOR_STEP_PIN 3
 #include <Arduino.h>
+#include <EEPROM.h>
 
 #define FRONT_LIMIT_SWITCH 2
 #define BACK_LIMIT_SWITCH 3
@@ -42,6 +43,8 @@ int step_pin = -1;
 int dir_pin = -1;
 int motor_id = -1;
 
+int eeprom_address = 0;
+
 String data = "";
 String angle_data = "";
 String motor_data = "";
@@ -61,9 +64,20 @@ int motor_pins[NUM_MOTORS][PINS_PER_MOTOR] = { { L0_YAW_MOTOR_DIR_PIN, L0_YAW_MO
                     { L1_YAW_MOTOR_DIR_PIN, L1_YAW_MOTOR_STEP_PIN },
                     { L1_PITCH_MOTOR_DIR_PIN, L1_PITCH_MOTOR_STEP_PIN } };
 
-long motor_steps[NUM_MOTORS] = {0, 0, 0, 0};
+long motor_steps[NUM_MOTORS] = {110, 0, 0, 0};
 
 int stepCount = 0;      // Step counter for the leg
+int start_address = 0;
+
+void write_positions_to_eeprom() {
+  // Write the current motor positions to eeprom
+  long current_steps=0;
+  for (int i = 0; i < NUM_MOTORS; i++) {
+    current_steps = motor_steps[i];
+    int addr = start_address + i * sizeof(long);
+    EEPROM.put(addr, current_steps);
+  }
+}
 
 void handleFrontSwitch() {
   // This is called if either of the 2 front switches are hit
@@ -84,6 +98,47 @@ void handleBackSwitch() {
 }
 
 void setup() {
+  Serial.begin(9600);
+  hit_front = false;
+  hit_back=false;
+  long steps=0;
+  // Write the current motor positions to eeprom
+  for (int i = 0; i < NUM_MOTORS; i++) {
+    int addr = start_address + i * sizeof(long);
+    EEPROM.get(addr, steps);
+    if (steps < 0) {
+      steps=0;
+    }
+    motor_steps[i]=steps;
+  }
+
+  Serial.println("Previosuly stored motor angles ");
+
+  for (int i = 0; i < NUM_MOTORS; i++) {
+    Serial.println(motor_steps[i]);
+
+    long cur_steps = motor_steps[i];
+
+    if (cur_steps != 0) {
+      if (cur_steps < 0) {
+        digitalWrite(motor_pins[i][0], LOW);
+      } else {
+        digitalWrite(motor_pins[i][0], HIGH);
+      }
+
+      step_pin = motor_pins[i][1];
+
+      cur_steps = abs(cur_steps);
+
+      for (int i = 0; i < cur_steps; i++) {
+        digitalWrite(step_pin, HIGH);
+        delayMicroseconds(500);
+        digitalWrite(step_pin, LOW);
+        delayMicroseconds(500);
+      }
+    }
+  }
+
   for (int i = 0; i < MOTOR_PINS_SIZE; i++) {
     for (int j = 0; j < PINS_PER_MOTOR; j++) {
       pinMode(motor_pins[i][j], OUTPUT);
@@ -96,13 +151,11 @@ void setup() {
     motor_steps[i] = 0;
   }
 
-  Serial.begin(9600);
-
   pinMode(FRONT_LIMIT_SWITCH, INPUT_PULLUP); // Use internal pull-up resistor
   pinMode(BACK_LIMIT_SWITCH, INPUT_PULLUP);
   
-  attachInterrupt(digitalPinToInterrupt(FRONT_LIMIT_SWITCH), handleFrontSwitch, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(BACK_LIMIT_SWITCH), handleBackSwitch, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(FRONT_LIMIT_SWITCH), handleFrontSwitch, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BACK_LIMIT_SWITCH), handleBackSwitch, FALLING);
 }
 
 void step_motor(int step_pin) {
@@ -216,6 +269,7 @@ void loop() {
   String data="";
 
   if (Serial.available() == 0) {
+    write_positions_to_eeprom();
     return;
   }
 
@@ -292,5 +346,7 @@ void loop() {
 
   Serial.println("ok");
   delay(1000);
+
+  // write_positions_to_eeprom();
   
 }
