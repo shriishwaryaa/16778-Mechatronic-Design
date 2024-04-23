@@ -4,7 +4,7 @@
 #include <EEPROM.h>
 
 #define FRONT_LIMIT_SWITCH 2
-#define BACK_LIMIT_SWITCH 3
+// #define BACK_LIMIT_SWITCH 3
 
 #define L0_YAW_MOTOR_DIR_PIN 5
 #define L0_YAW_MOTOR_STEP_PIN 10
@@ -26,7 +26,7 @@
 // Configuration on driver - 1 0 0 0 1 0 :DDDDDDD - Note - with 800 steps :))))))
 #define STEPS_PER_REV_GEARBOX 32000
 
-#define SWITCH_DEBOUNCE_TIME 50 // Debounce time in milliseconds
+#define SWITCH_DEBOUNCE_TIME 150 // Debounce time in milliseconds
 
 // Front switches map to pin3
 // Back switches map to pin2
@@ -100,16 +100,21 @@ void handleBackSwitch() {
 void setup() {
   Serial.begin(9600);
   hit_front = false;
-  hit_back=false;
+
+  for (int i = 0; i < MOTOR_PINS_SIZE; i++) {
+    for (int j = 0; j < PINS_PER_MOTOR; j++) {
+      pinMode(motor_pins[i][j], OUTPUT);
+    }
+  }
   long steps=0;
   // Write the current motor positions to eeprom
   for (int i = 0; i < NUM_MOTORS; i++) {
     int addr = start_address + i * sizeof(long);
-    EEPROM.get(addr, steps);
-    if (steps < 0) {
-      steps=0;
-    }
-    motor_steps[i]=steps;
+    EEPROM.get(addr, motor_steps[i]);
+    // if (steps < 0) {
+    //   steps=0;
+    // }
+    // motor_steps[i]=steps;
   }
 
   Serial.println("Previosuly stored motor angles ");
@@ -138,24 +143,16 @@ void setup() {
       }
     }
   }
+  // BAD BAD
+  // for (int i = 0; i < NUM_MOTORS; i++) {
+  //   motor_steps[i] = 0;
+  // }
 
-  for (int i = 0; i < MOTOR_PINS_SIZE; i++) {
-    for (int j = 0; j < PINS_PER_MOTOR; j++) {
-      pinMode(motor_pins[i][j], OUTPUT);
-    }
-  }
-
-  new_data=false;
-
-  for (int i = 0; i < NUM_MOTORS; i++) {
-    motor_steps[i] = 0;
-  }
-
-  pinMode(FRONT_LIMIT_SWITCH, INPUT_PULLUP); // Use internal pull-up resistor
-  pinMode(BACK_LIMIT_SWITCH, INPUT_PULLUP);
+  pinMode(FRONT_LIMIT_SWITCH, INPUT); // Use internal pull-up resistor
+  // pinMode(BACK_LIMIT_SWITCH, INPUT);
   
   attachInterrupt(digitalPinToInterrupt(FRONT_LIMIT_SWITCH), handleFrontSwitch, FALLING);
-  attachInterrupt(digitalPinToInterrupt(BACK_LIMIT_SWITCH), handleBackSwitch, FALLING);
+  // attachInterrupt(digitalPinToInterrupt(BACK_LIMIT_SWITCH), handleBackSwitch, FALLING);
 }
 
 void step_motor(int step_pin) {
@@ -201,74 +198,43 @@ void loop() {
     // If front motor is hit, it means one of the yaw motors went 
     // beyond the positive calibrated limit
     // Back off Buddy :)
-    long motor0_steps = motor_steps[0];
-    // TODO Check if greater than calibrated limit
-    // reverse direction
-    digitalWrite(motor_pins[0][0], LOW);
-    step_pin = motor_pins[0][1];
+    long steps = 0;
+    for (int i = 0; i < NUM_MOTORS; i++) {
+      steps = motor_steps[i];
 
-    for (int i = 0; i < motor0_steps; i++) {
-      digitalWrite(step_pin, HIGH);
-      delayMicroseconds(500);
-      digitalWrite(step_pin, LOW);
-      delayMicroseconds(500);
+      if (steps==0) {
+        continue;
+      }
+
+      if (steps < 0) {
+        digitalWrite(motor_pins[i][0], HIGH);
+        steps = abs(steps);
+      } else {
+        digitalWrite(motor_pins[i][0], LOW);
+      }
+
+      step_pin = motor_pins[i][1];
+
+      for (int i = 0; i < steps; i++) {
+        digitalWrite(step_pin, HIGH);
+        delayMicroseconds(500);
+        digitalWrite(step_pin, LOW);
+        delayMicroseconds(500);
+      }
+      motor_steps[i] = 0;
     }
-
-    digitalWrite(motor_pins[2][0], LOW);
-    step_pin = motor_pins[2][1];
-
-    long motor2_steps = motor_steps[2];
-
-    for (int i = 0; i < motor0_steps; i++) {
-      digitalWrite(step_pin, HIGH);
-      delayMicroseconds(500);
-      digitalWrite(step_pin, LOW);
-      delayMicroseconds(500);
-    }
-
-    motor_steps[0] = 0;
-    motor_steps[2] = 0;
 
     hit_front = false; // Reset the hit flag after handling
   }
-  
-  if (hit_back) {
-    Serial.println("Back Limit Switch Triggered!");
-
-    long motor0_steps = motor_steps[0];
-    // TODO Check if greater than calibrated limit
-    // reverse direction
-    digitalWrite(motor_pins[0][0], HIGH);
-    step_pin = motor_pins[0][1];
-
-    for (int i = 0; i < motor0_steps; i++) {
-      digitalWrite(step_pin, HIGH);
-      delayMicroseconds(500);
-      digitalWrite(step_pin, LOW);
-      delayMicroseconds(500);
-    }
-
-    digitalWrite(motor_pins[2][0], HIGH);
-    step_pin = motor_pins[2][1];
-
-    long motor2_steps = motor_steps[2];
-
-    for (int i = 0; i < motor0_steps; i++) {
-      digitalWrite(step_pin, HIGH);
-      delayMicroseconds(500);
-      digitalWrite(step_pin, LOW);
-      delayMicroseconds(500);
-    }
-
-    motor_steps[0] = 0;
-    motor_steps[2] = 0;
-
-    hit_back = false; // Reset the hit flag after handling
-  }
-
+ 
   String data="";
 
   if (Serial.available() == 0) {
+    for (int i = 0; i < NUM_MOTORS; i++) {
+      Serial.print("Angle i  ");
+      Serial.print(i);
+      Serial.println(motor_steps[i]);
+    }
     write_positions_to_eeprom();
     return;
   }
