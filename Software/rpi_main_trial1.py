@@ -7,8 +7,7 @@ import threading
 import serial
 from collections import defaultdict
 
-# our libraries
-# from .joystick import JoystickController
+# from pyPS4Controller.controller import Controller
 
 # Global list to store all the threads 
 dancing_threads = []
@@ -54,7 +53,7 @@ class DanceRobot():
       self.map_leg_serial[2*i].append(serial_port)
       self.map_leg_serial[(2*i)+1].append(serial_port)
 
-    time.sleep(5) 
+    time.sleep(2) 
 
   
   def calculate_delay(self, angle):
@@ -134,6 +133,26 @@ class DanceRobot():
       yaw_threads.remove(t)
 
     print("Yaw done")
+
+  def send_yaw_turn1(self, legs, angle):
+    print("Sending yaw angle to legs ", legs)
+    yaw_threads = []
+
+    for leg in legs:
+      serial_port = self.map_leg_serial[leg][0]
+      thread=None
+      if leg % 2 == 0:
+        thread = threading.Thread(target=self.write_angle_yaw, args=[leg, serial_port, angle])
+      else:
+        thread = threading.Thread(target=self.write_angle_yaw, args=[leg, serial_port, -angle])
+      thread.start()
+      yaw_threads.append(thread)
+
+    for t in yaw_threads:
+      t.join()
+      yaw_threads.remove(t)
+
+    print("Yaw done") 
   def move_forward_basic(self):
     # Basic tripod - legs 0, 3, 4 lift up move forward and down
     #                legs 1, 2, 5 lift up and move forward and then down
@@ -143,61 +162,69 @@ class DanceRobot():
       angle = 5
       # send pitch angle to the tripod one
       self.send_pitch(self.tripod_1, angle)
-      time.sleep(1)
+      time.sleep(0.5)
 
       angle = 5
       self.send_yaw(self.tripod_1, angle)
-      time.sleep(1)
+      time.sleep(0.5)
 
       angle = -5
       # send pitch angle to the tripod one
       self.send_pitch(self.tripod_1, angle)
-      time.sleep(1)
+      time.sleep(0.5)
 
       angle = -5
       # send pitch angle to the tripod one
       self.send_yaw(self.tripod_1, angle)
-      time.sleep(1)
+      time.sleep(0.5)
 
-    # angle = 10
-    # self.send_yaw(self.tripod_2, angle)
-    # time.sleep(3)
-
-    # angle = -5
-    # # send pitch angle to the tripod one
-    # self.send_pitch(self.tripod_2, angle)
-    # time.sleep(3)
-    
     print("Done moving forward")
   
   def move_backward_basic(self):
-    # Basic tripod - legs 0, 3, 4 lift up move forward and down
-    #                legs 1, 2, 5 lift up and move forward and then down
-    # Pitch angles - [5, -5]
-    # Yaw angles - [10]
-    angle = 5
-    # send pitch angle to the tripod one
-    self.send_pitch(self.tripod_1, angle)
+    for i in range(3):
+      angle = 5
+      # send pitch angle to the tripod one
+      self.send_pitch(self.tripod_1, angle)
+      time.sleep(0.5)
 
-    angle = -10
-    self.send_yaw(self.tripod_1, angle)
+      angle = -5
+      self.send_yaw(self.tripod_1, angle)
+      time.sleep(0.5)
 
-    angle = -5
-    # send pitch angle to the tripod one
-    self.send_pitch(self.tripod_1, angle)
+      angle = -5
+      # send pitch angle to the tripod one
+      self.send_pitch(self.tripod_1, angle)
+      time.sleep(0.5)
 
-    angle = 5
-    # send pitch angle to the tripod one
-    self.send_pitch(self.tripod_2, angle)
+      angle = 5
+      # send pitch angle to the tripod one
+      self.send_yaw(self.tripod_1, angle)
+      time.sleep(0.5)
 
-    angle = -10
-    self.send_yaw(self.tripod_2, angle)
+    print("Done moving forward")
+  
+  def turn_right(self):
+    for i in range(2):
+      angle = 5
+      # send pitch angle to the tripod one
+      self.send_pitch(self.tripod_1, angle)
+      time.sleep(0.5)
 
-    angle = -5
-    # send pitch angle to the tripod one
-    self.send_pitch(self.tripod_2, angle)
+      angle = -5
+      self.send_yaw_turn1(self.tripod_1, angle)
+      time.sleep(0.5)
 
-    print("Done moving backward")
+      angle = -5
+      # send pitch angle to the tripod one
+      self.send_pitch(self.tripod_1, angle)
+      time.sleep(0.5)
+
+      # angle = 5
+      # # send pitch angle to the tripod one
+      # self.send_yaw(self.tripod_1, angle)
+      # time.sleep(0.5)
+
+    print("Done moving forward")
 
 def main():
   # Initialize Dance Robot
@@ -205,7 +232,7 @@ def main():
   # Initialize all the serial ports
   TeamA.init_serial()
 
-  # Spawn a thread to listen to Joystick 
+  # # Spawn a thread to listen to Joystick 
   # joystick_thread = threading.Thread(target=TeamA.Joystick.joystick_listen)
   # joystick_thread.start()
   # dancing_threads.append(joystick_thread)
@@ -214,14 +241,15 @@ def main():
   # imu_thread.start()
   # dancing_threads.append(imu_thread)
 
-  print("Moving forward now")
-  TeamA.move_forward_basic()
+  # print("Moving forward now")
+  # TeamA.move_forward_basic()
 
   # print("Moving backward now")
-  # TeamA.move_backward_basic()
+  TeamA.turn_right()
 
   for t in dancing_threads:
     t.join()
+
 
 if __name__=='__main__':
   main()
