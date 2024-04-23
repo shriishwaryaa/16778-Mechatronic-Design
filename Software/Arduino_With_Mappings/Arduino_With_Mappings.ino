@@ -71,40 +71,16 @@ void loop() {
     step_pin = L0_YAW_MOTOR_STEP_PIN;
     dir_pin = L0_YAW_MOTOR_DIR_PIN;
 
-    // Serial.print("Motor ");
-    // Serial.println(motor);
-    
-    // Serial.print("step pin: ");
-    // Serial.println(step_pin);
-
-    // Serial.print("dir pin: ");
-    // Serial.println(dir_pin);
   }
   else if (motor == 1){
     step_pin = L0_PITCH_MOTOR_STEP_PIN;
     dir_pin = L0_PITCH_MOTOR_DIR_PIN;
 
-    // Serial.print("Motor ");
-    // Serial.println(motor);
-
-    // Serial.print("step pin: ");
-    // Serial.println(step_pin);
-
-    // Serial.print("dir pin: ");
-    // Serial.println(dir_pin);
   }
   else if (motor == 2) {
     step_pin = L1_YAW_MOTOR_STEP_PIN;
     dir_pin = L1_YAW_MOTOR_DIR_PIN;
 
-    // Serial.print("Motor ");
-    // Serial.println(motor);
-
-    // Serial.print("step pin: ");
-    // Serial.println(step_pin);
-
-    // Serial.print("dir pin: ");
-    // Serial.println(dir_pin);
   }
   else {
     step_pin = L1_PITCH_MOTOR_STEP_PIN;
