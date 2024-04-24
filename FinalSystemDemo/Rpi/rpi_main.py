@@ -252,9 +252,85 @@ class DanceRobot(Controller):
       # send pitch angle to the tripod one
       self.send_pitch(self.tripod_1, angle)
       time.sleep(0.5)
+
+  def move_ripple_down(self):
+    # Leg 1 - Arduino 0
+    serial_port = self.map_leg_serial[1][0]
+    self.write_angle_pitch(1, serial_port, -10)
+
+    # Leg 3 - Arduino 2
+    serial_port = self.map_leg_serial[3][0]
+    self.write_angle_pitch(3, serial_port, -10)
+
+    # Leg 5 - Arduino 3
+    serial_port = self.map_leg_serial[5][0]
+    self.write_angle_pitch(5, serial_port, -10)
+
+  def move_ripple_up(self):
+    # Leg 0 - Arduino 0
+    serial_port = self.map_leg_serial[0][0]
+    self.write_angle_pitch(0, serial_port, 10)
+
+    # Leg 2 - Arduino 2
+    serial_port = self.map_leg_serial[2][0]
+    self.write_angle_pitch(2, serial_port, 10)
+
+    # Leg 4 - Arduino 3
+    serial_port = self.map_leg_serial[4][0]
+    self.write_angle_pitch(4, serial_port, 10)    
+
+
+  def ripple_thread(self):
+    threads = []
+
+    thread_1 = threading.Thread(target=self.move_ripple_down)
+    thread_1.start()
+    threads.append(thread_1)
+
+    thread_2 = threading.Thread(target=self.move_ripple_up)
+    thread_2.start()
+    threads.append(thread_2)
+
+    for t in threads:
+      t.join()
   
   def ripple(self):
     print("Rippling ")
+    # Sequential movement 
+    # Leg 1 ,3, 5 move up
+    # Leg 0 ,2, 4 move up while 1, 3, 5 move down
+    # Arduino 0 - 0,1
+    # Arduino 1 - 2,3
+    # Arduino 2 - 4,5
+
+    # Leg 1 - Arduino 0
+    serial_port = self.map_leg_serial[1][0]
+    self.write_angle_pitch(1, serial_port, 10)
+
+    # Leg 3 - Arduino 2
+    serial_port = self.map_leg_serial[3][0]
+    self.write_angle_pitch(3, serial_port, 10)
+
+    # Leg 5 - Arduino 3
+    serial_port = self.map_leg_serial[5][0]
+    self.write_angle_pitch(5, serial_port, 10)
+
+    self.ripple_thread()
+
+    # Leg 0 - Arduino 0
+    serial_port = self.map_leg_serial[0][0]
+    self.write_angle_pitch(0, serial_port, -10)
+
+    # Leg 2 - Arduino 2
+    serial_port = self.map_leg_serial[2][0]
+    self.write_angle_pitch(2, serial_port, -10)
+
+    # Leg 4 - Arduino 3
+    serial_port = self.map_leg_serial[4][0]
+    self.write_angle_pitch(4, serial_port, -10)    
+
+    print("Ripple done!")
+
 
   def on_triangle_press(self):
     print("Moving forward")
