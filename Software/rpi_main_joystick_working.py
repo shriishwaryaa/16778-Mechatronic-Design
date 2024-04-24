@@ -175,16 +175,16 @@ class DanceRobot(Controller):
       self.send_pitch(self.tripod_1, angle)
       time.sleep(0.5)
 
-      angle = 10
+      angle = 5
       self.send_yaw(self.tripod_1, angle)
       time.sleep(0.5)
 
-      angle = -8
+      angle = -5
       # send pitch angle to the tripod one
       self.send_pitch(self.tripod_1, angle)
       time.sleep(0.5)
 
-      angle = -10
+      angle = -5
       # send pitch angle to the tripod one
       self.send_yaw(self.tripod_1, angle)
       time.sleep(0.5)
@@ -194,16 +194,16 @@ class DanceRobot(Controller):
       self.send_pitch(self.tripod_2, angle)
       time.sleep(0.5)
 
-      angle = 10
+      angle = 5
       self.send_yaw(self.tripod_2, angle)
       time.sleep(0.5)
 
-      angle = -8
+      angle = -5
       # send pitch angle to the tripod one
       self.send_pitch(self.tripod_2, angle)
       time.sleep(0.5)
 
-      angle = -10
+      angle = -5
       # send pitch angle to the tripod one
       self.send_yaw(self.tripod_2, angle)
       time.sleep(0.5)
@@ -217,16 +217,16 @@ class DanceRobot(Controller):
       self.send_pitch(self.tripod_1, angle)
       time.sleep(0.5)
 
-      angle = -10
+      angle = -5
       self.send_yaw(self.tripod_1, angle)
       time.sleep(0.5)
 
-      angle = -8
+      angle = -5
       # send pitch angle to the tripod one
       self.send_pitch(self.tripod_1, angle)
       time.sleep(0.5)
 
-      angle = 10
+      angle = 5
       # send pitch angle to the tripod one
       self.send_yaw(self.tripod_1, angle)
       time.sleep(0.5)
@@ -236,16 +236,16 @@ class DanceRobot(Controller):
       self.send_pitch(self.tripod_2, angle)
       time.sleep(0.5)
 
-      angle = -10
+      angle = -5
       self.send_yaw(self.tripod_2, angle)
       time.sleep(0.5)
 
-      angle = -8
+      angle = -5
       # send pitch angle to the tripod one
       self.send_pitch(self.tripod_2, angle)
       time.sleep(0.5)
 
-      angle = 10
+      angle = 5
       # send pitch angle to the tripod one
       self.send_yaw(self.tripod_2, angle)
       time.sleep(0.5)
@@ -259,37 +259,16 @@ class DanceRobot(Controller):
       self.send_pitch(self.tripod_1, angle)
       time.sleep(0.5)
 
-      angle = -10
+      angle = -5
       self.send_yaw_turn1(self.tripod_1, angle)
       time.sleep(0.5)
 
-      angle = -8
+      angle = -5
       # send pitch angle to the tripod one
       self.send_pitch(self.tripod_1, angle)
       time.sleep(0.5)
 
-      angle = 5
-      # send pitch angle to the tripod one
-      self.send_pitch(self.tripod_2, angle)
-      time.sleep(0.5)
-
-      angle = -10
-      self.send_yaw_turn1(self.tripod_2, angle)
-      time.sleep(0.5)
-
-      angle = -8
-      # send pitch angle to the tripod one
-      self.send_pitch(self.tripod_2, angle)
-      time.sleep(0.5)
-
     # print("Done moving forward")
-  def on_circle_press(self):
-    angle = -3
-    self.send_pitch(self.tripod_2, angle)
-    time.sleep(0.5) 
-    self.send_pitch(self.tripod_1, angle)
-    time.sleep(0.5)
-  
 
   def on_x_press(self):
     self.move_forward_basic()
@@ -305,20 +284,13 @@ class DanceRobot(Controller):
     # print("Done moving backward")
     pass
 
-  def on_L1_press(self):
-    angle = 3
-    self.send_pitch(self.tripod_2, angle)
-    time.sleep(0.5) 
-    self.send_pitch(self.tripod_1, angle)
-    time.sleep(0.5) 
-
   def on_square_release(self):
     # self.turn_right()
     # print("Done with square")
     pass
 
   def on_circle_release(self):
-    # print("Done turning")
+    print("Done turning")
     pass
   
   def on_triangle_release(self):
