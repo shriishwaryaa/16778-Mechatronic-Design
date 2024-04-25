@@ -154,10 +154,43 @@ void loop() {
 
   float angle = angle_data.toFloat();
   float motor = motor_data.toFloat();
-  motor_id=(int)motor;
+  
+  if (motor == 0) {
+    step_pin = L0_YAW_MOTOR_STEP_PIN;
+    dir_pin = L0_YAW_MOTOR_DIR_PIN;
+    motor_id = (int)motor;
 
-  step_pin = L1_PITCH_MOTOR_STEP_PIN;
-  dir_pin = L1_PITCH_MOTOR_DIR_PIN;
+  }
+  else if (motor == 1){
+    step_pin = L0_PITCH_MOTOR_STEP_PIN;
+    dir_pin = L0_PITCH_MOTOR_DIR_PIN;
+
+    motor_id = (int)motor;
+  }
+  else if (motor == 2) {
+    step_pin = L1_YAW_MOTOR_STEP_PIN;
+    dir_pin = L1_YAW_MOTOR_DIR_PIN;
+
+    motor_id = (int)motor;
+
+  }
+  else if (motor == 3) {
+    step_pin = L1_PITCH_MOTOR_STEP_PIN;
+    dir_pin = L1_PITCH_MOTOR_DIR_PIN;
+
+    motor_id = (int)motor;
+
+    // Serial.print("Motor ");
+    // Serial.println(motor);
+
+    // Serial.print("step pin: ");
+    // Serial.println(step_pin);
+
+    // Serial.print("dir pin: ");
+    // Serial.println(dir_pin);
+  }
+
+  motor_id=motor;
   
   if (angle < 0) {
     digitalWrite(dir_pin, LOW);
