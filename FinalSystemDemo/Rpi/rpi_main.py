@@ -2,32 +2,38 @@
 import os
 import time
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import threading 
 import serial
 from collections import defaultdict
 
+# from pyPS4Controller.controller import Controller
 from joystick import Controller
-
 # Global list to store all the threads 
 dancing_threads = []
+
+current_right_leg = 0
+right_index = 0
+right_legs = [1,3,5]
+current_left_leg = 0
+right_index
+right_legs
 
 class DanceRobot(Controller):
   def __init__(self, interface, **kwargs):
     super().__init__(interface=interface, **kwargs)
-
     print("Hello from Dance Robot")
     self.Estop = False
     # We have 6 legs and 3 Arduinos
     # Each Arduino will power 2 legs - which means 4 motors 
     self.serial_ports = ["/dev/arduino_0", "/dev/arduino_imu", "/dev/arduino_2"]
 
-    # self.imu_serial_dev = "/dev/arduino_imu"
-
     self.serial_port_handlers = []
     self.tripod_1 = [0,3,4]
+    # TODO - change to 1,2, 5
     self.tripod_2 = [1,2,5]
 
+    # TODO Change to 0 to 6
     legs = [0,1,2,3,4,5]
     self.legs_to_motors = defaultdict(list)
 
@@ -39,10 +45,9 @@ class DanceRobot(Controller):
       self.legs_to_motors[leg].append(2*leg)
       self.legs_to_motors[leg].append((2*leg) + 1)
 
-    self.forward_angles_basic = [5, -5, -5, -5]
-    self.backward_angles_basic = [5, -5, -5, -5]
+    self.forward_angles_basic = [5, 5, -5, -5]
+    self.backward_angles_basic = [5, -5, -5, 5]
     self.map_leg_serial = defaultdict(list)
-
 
   def init_serial(self):
     for i in range(len(self.serial_ports)):
@@ -54,7 +59,39 @@ class DanceRobot(Controller):
 
     time.sleep(2) 
 
+  def on_triangle_press(self):
+    print("tri press overridden")
+    self.move_forward_basic()
+
+  def on_x_press(self):
+    print("x press overridden")
+    self.move_backward_basic()
+
+  def on_L1_press(self):
+    global current_left_leg
+    global left_index
+    global left_legs
+    current_left_leg = left_legs[left_index]
+    print("Selecting leg  ")
+    print(current_left_leg)
+    left_index = (left_index+1) % 3
   
+  def on_R1_press(self):
+    global current_right_leg
+    global right_index
+    global right_legs
+    current_right_leg = right_legs[right_index]
+    print("Selecting leg  ")
+    print(current_right_leg)
+    left_index = (right_index+1) % 3
+
+  def on_circle_press(self):
+    print("circle press overridden")
+    self.turn_right()
+  
+  def on_square_press(self):
+    print("Square function overridden")
+
   def calculate_delay(self, angle):
   # 5 degrees to 2 seconds
   # angle is in degrees
@@ -134,7 +171,7 @@ class DanceRobot(Controller):
     # print("Yaw done")
 
   def send_yaw_turn1(self, legs, angle):
-    print("Sending yaw angle to legs ", legs)
+    # print("Sending yaw angle to legs ", legs)
     yaw_threads = []
 
     for leg in legs:
@@ -157,7 +194,7 @@ class DanceRobot(Controller):
     #                legs 1, 2, 5 lift up and move forward and then down
     # Pitch angles - [5, -5]
     # Yaw angles - [10]
-    for i in range(3):
+    for i in range(2):
       angle = 5
       # send pitch angle to the tripod one
       self.send_pitch(self.tripod_1, angle)
@@ -195,9 +232,11 @@ class DanceRobot(Controller):
       # send pitch angle to the tripod one
       self.send_yaw(self.tripod_2, angle)
       time.sleep(0.5)
+
+    # print("Done moving forward")
   
   def move_backward_basic(self):
-    for i in range(3):
+    for i in range(2):
       angle = 5
       # send pitch angle to the tripod one
       self.send_pitch(self.tripod_1, angle)
@@ -236,9 +275,10 @@ class DanceRobot(Controller):
       self.send_yaw(self.tripod_2, angle)
       time.sleep(0.5)
 
+    # print("Done moving forward")
   
   def turn_right(self):
-    for i in range(10):
+    for i in range(2):
       angle = 5
       # send pitch angle to the tripod one
       self.send_pitch(self.tripod_1, angle)
@@ -253,108 +293,37 @@ class DanceRobot(Controller):
       self.send_pitch(self.tripod_1, angle)
       time.sleep(0.5)
 
-  def move_ripple_down(self):
-    # Leg 1 - Arduino 0
-    serial_port = self.map_leg_serial[1][0]
-    self.write_angle_pitch(1, serial_port, -10)
-
-    # Leg 3 - Arduino 2
-    serial_port = self.map_leg_serial[3][0]
-    self.write_angle_pitch(3, serial_port, -10)
-
-    # Leg 5 - Arduino 3
-    serial_port = self.map_leg_serial[5][0]
-    self.write_angle_pitch(5, serial_port, -10)
-
-  def move_ripple_up(self):
-    # Leg 0 - Arduino 0
-    serial_port = self.map_leg_serial[0][0]
-    self.write_angle_pitch(0, serial_port, 10)
-
-    # Leg 2 - Arduino 2
-    serial_port = self.map_leg_serial[2][0]
-    self.write_angle_pitch(2, serial_port, 10)
-
-    # Leg 4 - Arduino 3
-    serial_port = self.map_leg_serial[4][0]
-    self.write_angle_pitch(4, serial_port, 10)    
-
-
-  def ripple_thread(self):
-    threads = []
-
-    thread_1 = threading.Thread(target=self.move_ripple_down)
-    thread_1.start()
-    threads.append(thread_1)
-
-    thread_2 = threading.Thread(target=self.move_ripple_up)
-    thread_2.start()
-    threads.append(thread_2)
-
-    for t in threads:
-      t.join()
-  
-  def ripple(self):
-    print("Rippling ")
-    # Sequential movement 
-    # Leg 1 ,3, 5 move up
-    # Leg 0 ,2, 4 move up while 1, 3, 5 move down
-    # Arduino 0 - 0,1
-    # Arduino 1 - 2,3
-    # Arduino 2 - 4,5
-
-    # Leg 1 - Arduino 0
-    serial_port = self.map_leg_serial[1][0]
-    self.write_angle_pitch(1, serial_port, 10)
-
-    # Leg 3 - Arduino 2
-    serial_port = self.map_leg_serial[3][0]
-    self.write_angle_pitch(3, serial_port, 10)
-
-    # Leg 5 - Arduino 3
-    serial_port = self.map_leg_serial[5][0]
-    self.write_angle_pitch(5, serial_port, 10)
-
-    self.ripple_thread()
-
-    # Leg 0 - Arduino 0
-    serial_port = self.map_leg_serial[0][0]
-    self.write_angle_pitch(0, serial_port, -10)
-
-    # Leg 2 - Arduino 2
-    serial_port = self.map_leg_serial[2][0]
-    self.write_angle_pitch(2, serial_port, -10)
-
-    # Leg 4 - Arduino 3
-    serial_port = self.map_leg_serial[4][0]
-    self.write_angle_pitch(4, serial_port, -10)    
-
-    print("Ripple done!")
-
-
-  def on_triangle_press(self):
-    print("Moving forward")
-    self.move_forward_basic()
+    # print("Done moving forward")
 
   def on_x_press(self):
-    print("Moving Backward")
+    self.move_forward_basic()
+
+  def on_triangle_press(self):
     self.move_backward_basic()
 
-  def on_circle_press(self):
-    print("Turning")
-    self.turn_right()
-  
   def on_square_press(self):
-    print("Hello from the other side!")
-    self.ripple()
+    self.turn_right()
+
+  def on_x_release(self):
+    print("Done moving backward")
+
+  def on_square_release(self):
+    print("Done with square")
+
+  def on_circle_release(self):
+    print("Done turning")
+  
+  def on_triangle_release(self):
+    print("Done moving forward")
 
 def main():
   # Initialize Dance Robot
   TeamA = DanceRobot(interface="/dev/input/js0")
+  # TeamA = DanceRobot()
   # Initialize all the serial ports
   TeamA.init_serial()
 
-  # Spawn a thread to listen to Joystick 
+  # # Spawn a thread to listen to Joystick 
   joystick_thread = threading.Thread(target=TeamA.listen)
   joystick_thread.start()
   dancing_threads.append(joystick_thread)
