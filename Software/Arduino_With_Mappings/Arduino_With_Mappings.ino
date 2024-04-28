@@ -1,6 +1,8 @@
 // #define L0_YAW_MOTOR_DIR_PIN 2
 // #define L0_YAW_MOTOR_STEP_PIN 3
 
+// TEST INPUT STRING: 5$0#10$1#15$2#20$3# 
+
 #define L0_YAW_MOTOR_DIR_PIN 5
 #define L0_YAW_MOTOR_STEP_PIN 10
 #define L0_PITCH_MOTOR_DIR_PIN 7
@@ -59,89 +61,150 @@ void loop() {
     // Busy wait for angle 
   }
 
-  data = Serial.readStringUntil('\n');
+//  data = Serial.readStringUntil('\n');
+//
+//  Serial.print("Read data - ");
+//  Serial.println(data);
+//
+//  angle_data = data.substring(0, data.indexOf('$'));
+//  motor_data = data.substring(data.indexOf('$') + 1);
+//
+//  Serial.println(angle_data);
+//  Serial.println(motor_data);
+//
+//  float angle = angle_data.toFloat();
+//  float motor = motor_data.toFloat();
 
-  Serial.print("Read data - ");
-  Serial.println(data);
+  //read command
+  String command = Serial.readStringUntil('\n');
+  // Format is Angle$MotorID#Angle$MotorID#Angle$MotorID#Angle$MotorID#
 
-  angle_data = data.substring(0, data.indexOf('$'));
-  motor_data = data.substring(data.indexOf('$') + 1);
+  Serial.print("Read command ");
+  Serial.println(command);
 
-  Serial.println(angle_data);
-  Serial.println(motor_data);
+  float angle = -1.0;
 
-  float angle = angle_data.toFloat();
-  float motor = motor_data.toFloat();
+  for (int i = 0; i < 4; i++){
+    if (command == '\n'){
+      Serial.println("Invalid Command!!");
+      return;
+    }
+    delayMicroseconds(1000);
+//    Serial.println(i);
+//    Serial.print("Command: ");
+//    Serial.println(command);
+//    Serial.println(command.length());
+    unsigned int dollar_idx = command.indexOf('$');
+    unsigned int hash_idx = command.indexOf('#');
+//    Serial.print("Dollar index ");
+//    Serial.print(dollar_idx);
+//    Serial.print(", Hash index ");
+//    Serial.println(hash_idx);
 
-  if (motor == 0) {
+    //get angle
+    String motor_angle = command.substring(0, dollar_idx);
+//    Serial.print("Angle ");
+//    Serial.println(motor_angle);
+
+    //get motor ID
+    String motor_id = command.substring(dollar_idx+1, hash_idx);
+//    Serial.print("Motor ID ");
+//    Serial.println(motor_id);
+
+    //update angles array
+    int id = motor_id.toInt();
+    angle = motor_angle.toFloat();
+
+    angles[id] = angle;
+
+//     //update command
+//    if (i < 3){
+//      command = command.substring(hash_idx+1);
+//    }
+//    else{
+//      command = command;
+//    }
+    command = command.substring(hash_idx+1);
+//    Serial.print("New Command: ");
+//    Serial.println(command);
+
+//    Serial.println("----------------------");
+    
+  }
+
+  Serial.print("Updated angles array: ");
+  for (int j = 0; j < 4; j++){
+    Serial.print(angles[j]);
+    Serial.print(", ");
+  }
+  Serial.println("");
+
+  for (int i = 0; i < 4; i++){
+    if (i == 0) {
     step_pin = L0_YAW_MOTOR_STEP_PIN;
     dir_pin = L0_YAW_MOTOR_DIR_PIN;
+    }
+    else if (i == 1){
+      step_pin = L0_PITCH_MOTOR_STEP_PIN;
+      dir_pin = L0_PITCH_MOTOR_DIR_PIN;
+    }
+    else if (i == 2) {
+      step_pin = L1_YAW_MOTOR_STEP_PIN;
+      dir_pin = L1_YAW_MOTOR_DIR_PIN;
+    }
+    else {
+      step_pin = L1_PITCH_MOTOR_STEP_PIN;
+      dir_pin = L1_PITCH_MOTOR_DIR_PIN;
+    }
 
-    // Serial.print("Motor ");
-    // Serial.println(motor);
+    if (angles[i] < 0) {
+      digitalWrite(dir_pin, LOW);
+    } else {
+      digitalWrite(dir_pin, HIGH);
+    }
+
+    int total_steps = calculate_steps(angle);
+
+    for (int i = 0; i < total_steps; i++) {
+      digitalWrite(step_pin, HIGH);
+      delayMicroseconds(500);
+      digitalWrite(step_pin, LOW);
+      delayMicroseconds(500);
+    }
     
-    // Serial.print("step pin: ");
-    // Serial.println(step_pin);
-
-    // Serial.print("dir pin: ");
-    // Serial.println(dir_pin);
   }
-  else if (motor == 1){
-    step_pin = L0_PITCH_MOTOR_STEP_PIN;
-    dir_pin = L0_PITCH_MOTOR_DIR_PIN;
 
-    // Serial.print("Motor ");
-    // Serial.println(motor);
-
-    // Serial.print("step pin: ");
-    // Serial.println(step_pin);
-
-    // Serial.print("dir pin: ");
-    // Serial.println(dir_pin);
-  }
-  else if (motor == 2) {
-    step_pin = L1_YAW_MOTOR_STEP_PIN;
-    dir_pin = L1_YAW_MOTOR_DIR_PIN;
-
-    // Serial.print("Motor ");
-    // Serial.println(motor);
-
-    // Serial.print("step pin: ");
-    // Serial.println(step_pin);
-
-    // Serial.print("dir pin: ");
-    // Serial.println(dir_pin);
-  }
-  else {
-    step_pin = L1_PITCH_MOTOR_STEP_PIN;
-    dir_pin = L1_PITCH_MOTOR_DIR_PIN;
-
-    // Serial.print("Motor ");
-    // Serial.println(motor);
-
-    // Serial.print("step pin: ");
-    // Serial.println(step_pin);
-
-    // Serial.print("dir pin: ");
-    // Serial.println(dir_pin);
-  }
+//  if (motor == 0) {
+//    step_pin = L0_YAW_MOTOR_STEP_PIN;
+//    dir_pin = L0_YAW_MOTOR_DIR_PIN;
+//  }
+//  else if (motor == 1){
+//    step_pin = L0_PITCH_MOTOR_STEP_PIN;
+//    dir_pin = L0_PITCH_MOTOR_DIR_PIN;
+//  }
+//  else if (motor == 2) {
+//    step_pin = L1_YAW_MOTOR_STEP_PIN;
+//    dir_pin = L1_YAW_MOTOR_DIR_PIN;
+//  }
+//  else {
+//    step_pin = L1_PITCH_MOTOR_STEP_PIN;
+//    dir_pin = L1_PITCH_MOTOR_DIR_PIN;
+//  }
   
-  if (angle < 0) {
-    digitalWrite(dir_pin, LOW);
-  }
+//  if (angle < 0) {
+//    digitalWrite(dir_pin, LOW);
+//  } else {
+//    digitalWrite(dir_pin, HIGH);
+//  }
 
-  else {
-    digitalWrite(dir_pin, HIGH);
-  }
-
-  int total_steps = calculate_steps(angle);
-
-  for (int i = 0; i < total_steps; i++) {
-    digitalWrite(step_pin, HIGH);
-    delayMicroseconds(500);
-    digitalWrite(step_pin, LOW);
-    delayMicroseconds(500);
-  }
+//  int total_steps = calculate_steps(angle);
+//
+//  for (int i = 0; i < total_steps; i++) {
+//    digitalWrite(step_pin, HIGH);
+//    delayMicroseconds(500);
+//    digitalWrite(step_pin, LOW);
+//    delayMicroseconds(500);
+//  }
 
   Serial.println("ok");
   delay(1000);
